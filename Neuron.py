@@ -45,7 +45,7 @@ class Neuron:
         Returns:
             np.float64: neuron activation
         """
-        return self.activation.forward( np.cross(inputs, self.weights) + self.bias)
+        return self.activation.forward( np.dot(inputs, np.transpose(self.weights)) + self.bias)
 
 
     def backward(self, inputs, output, target, step_size):
@@ -60,6 +60,9 @@ class Neuron:
         self.weights -= step_size * \
             (
                 inputs *
-                self.activation.backward(np.cross(inputs, self.weights) + self.bias) *
+                self.activation.backward((self.weights * inputs + self.bias)) *
                 self.loss.backward(output, target)
             )
+        
+        self.bias -= step_size * \
+            self.loss.backward(output, target)
