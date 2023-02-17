@@ -1,7 +1,7 @@
 """ReLu implementation
 """
 from Activation import Activation
-
+import numpy as np
 
 class ReLu(Activation):
     """Implementation of relu activation function
@@ -13,6 +13,6 @@ class ReLu(Activation):
     def __init__(self):
         Activation.__init__(
             self,
-            lambda x: x if x > 0 else 0,
-            lambda x: 1 if x > 0 else 0,
+            lambda x: np.where(x > 0, x, 0),
+            lambda x: (x > 0).astype(int)
         )
