@@ -48,7 +48,7 @@ class Neuron:
         return self.activation.forward( np.dot(inputs, np.transpose(self.weights)) + self.bias)
 
 
-    def backward(self, inputs, output, target, step_size):
+    def backward(self, inputs, target, step_size):
         """Compute backward pass on neuron
 
         Args:
@@ -57,12 +57,14 @@ class Neuron:
             target (np.float32): target value
             step_size (np.float32): step size for gradient descent
         """
+        output = self.forward(inputs)
+
         self.weights -= step_size * \
             (
                 inputs *
                 self.activation.backward((self.weights * inputs + self.bias)) *
                 self.loss.backward(output, target)
             )
-        
+
         self.bias -= step_size * \
             self.loss.backward(output, target)
