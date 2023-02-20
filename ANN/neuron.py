@@ -57,7 +57,8 @@ class Neuron:
         """
         if new_weights.shape != self.weights.shape:
             raise ValueError(
-                f"Invalid weight shape. Expected {self.weights.shape} but received {new_weights.shape}."
+                f"Invalid weight shape. \
+                    Expected {self.weights.shape} but received {new_weights.shape}."
             )
         self.weights = new_weights
 

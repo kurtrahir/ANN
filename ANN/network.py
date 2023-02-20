@@ -7,8 +7,10 @@ from ANN import Layer
 class Network:
     """Implementation of a neural network object
     """
-    def __init__(self, layers : list[Layer]):
+    def __init__(self, layers : list[Layer], gorlot : bool = True):
         self.layers = layers
+        if gorlot:
+            self.initialize_gorlot()
 
     def add_layer(self, layer):
         """Add layer to network
