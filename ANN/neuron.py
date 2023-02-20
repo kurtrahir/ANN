@@ -23,18 +23,17 @@ class Neuron:
             loss (Loss): Loss function object
         """
         rnd = np.random.default_rng()
-        self.weights = rnd.uniform(-1,1,n_inputs)
-        self.bias = rnd.uniform(-1,1,n_inputs)
+        self.weights = rnd.uniform(-1,1,n_inputs+1)
+        self.inputs = np.ones((n_inputs+1))
         self.activation_function = activation_function
         self.loss_function = loss_function
-        self.activation_value = 0
         self.linear_combination = np.zeros(self.weights.shape)
         self.gradients = np.zeros(self.weights.shape)
 
     def set(
             self,
             weights: NDArray[np.float32],
-            bias: NDArray[np.float32],
+            bias: np.float32,
             activation_function : Activation,
             loss_function : Loss
         ):
@@ -46,11 +45,21 @@ class Neuron:
             activation (Activation): Activation function object
             loss (Loss): Loss function object
         """
-        self.weights = weights
-        self.bias = bias
+        self.weights = np.concatenate((weights, bias))
         self.activation_function = activation_function
         self.loss_function = loss_function
 
+    def set_weights(self, new_weights : NDArray[np.float32]) -> None:
+        """Setter for neuron's weights
+
+        Args:
+            new_weights (NDArray[np.float32]): The new weight values
+        """
+        if new_weights.shape != self.weights.shape:
+            raise ValueError(
+                f"Invalid weight shape. Expected {self.weights.shape} but received {new_weights.shape}."
+            )
+        self.weights = new_weights
 
     def forward(
             self,
@@ -64,9 +73,9 @@ class Neuron:
         Returns:
             np.float64: neuron activation
         """
-        self.linear_combination = inputs * self.weights + self.bias
-        self.activation_value = self.activation_function.forward(np.sum(self.linear_combination))
-        return self.activation_value
+        self.inputs[:-1] = inputs
+        self.linear_combination = self.inputs * self.weights
+        return self.activation_function.forward(np.sum(self.linear_combination))
 
 
     def backward(
@@ -83,16 +92,14 @@ class Neuron:
             target (np.float32): target value
             step_size (np.float32): step size for gradient descent
         """
-        _ = self.forward(inputs)
+        output = self.forward(inputs)
 
         update_term = self.activation_function.backward(self.linear_combination) * \
-            self.loss_function.backward(self.activation_value, target) * \
+            self.loss_function.backward(output, target) * \
             step_size
 
-        self.gradients = inputs * update_term
+        self.gradients = self.inputs * update_term
 
         self.weights -= self.gradients
 
-        self.bias -= update_term
-
-        return self.gradients
+        return np.sum(self.gradients)

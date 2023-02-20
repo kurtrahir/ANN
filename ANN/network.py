@@ -1,6 +1,6 @@
 """Network implementation
 """
-
+import numpy as np
 from ANN import Layer
 
 
@@ -33,3 +33,14 @@ class Network:
         targets = self.layers[-1].backward(outputs[-2], targets, step_size).reshape(-1)
         for i in range(-2, -len(self.layers)):
             targets = self.layers[i].backward(outputs[i-1], targets, step_size).reshape(-1)
+
+    def initialize_gorlot(self) -> None:
+        """Initialize weights according to method proposed by gorlot
+        """
+        rnd = np.random.default_rng()
+        def gorlot(n_inputs, n_neurons):
+            value = np.sqrt(6) / np.sqrt(n_inputs + n_neurons)
+            return rnd.uniform(-value, value, n_inputs)
+
+        for layer in self.layers:
+            layer.initialize_weights(gorlot)

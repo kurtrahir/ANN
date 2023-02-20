@@ -15,5 +15,5 @@ class Linear(Activation):
         Activation.__init__(
             self,
             lambda x: x,
-            lambda x: np.where(x != 0, x/x, 0)
+            lambda x: np.invert(np.isclose(x, 0))
         )
