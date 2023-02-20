@@ -56,4 +56,4 @@ class Dense(Layer):
         initializer : Callable[[int,int], NDArray[np.float32]]
     ) -> None:
         for neuron in self.Neurons:
-            neuron.set_weights(initializer(self.n_inputs+1, self.n_neurons))
+            neuron.set_weights(initializer(self.n_inputs, self.n_neurons, self.n_inputs+1))

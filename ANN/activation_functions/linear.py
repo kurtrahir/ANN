@@ -5,7 +5,7 @@ from ANN.activation_functions import Activation
 
 
 class Linear(Activation):
-    """Implementation of relu activation function
+    """Implementation of linear activation function
 
     Args:
         Activation (np.float32): Generic activation function type
