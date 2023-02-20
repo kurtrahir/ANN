@@ -2,6 +2,7 @@
 """
 
 import numpy as np
+from numpy.typing import NDArray
 from ANN.activation_functions import Activation
 from ANN.loss_functions import Loss
 
@@ -23,7 +24,7 @@ class Neuron:
         """
         rnd = np.random.default_rng()
         self.weights = rnd.uniform(-1,1,n_inputs)
-        self.bias = rnd.uniform(-1,1,1)
+        self.bias = rnd.uniform(-1,1,n_inputs)
         self.activation_function = activation_function
         self.loss_function = loss_function
         self.activation_value = 0
@@ -32,8 +33,8 @@ class Neuron:
 
     def set(
             self,
-            weights: np.ndarray[np.float32],
-            bias : np.ndarray[np.float32],
+            weights: NDArray[np.float32],
+            bias: NDArray[np.float32],
             activation_function : Activation,
             loss_function : Loss
         ):
@@ -53,7 +54,7 @@ class Neuron:
 
     def forward(
             self,
-            inputs : np.ndarray[np.float32]
+            inputs: NDArray[np.float32]
         ):
         """Compute forward pass on neuron
 
@@ -70,8 +71,8 @@ class Neuron:
 
     def backward(
             self,
-            inputs : np.ndarray[np.float32],
-            target : np.ndarray[np.float32],
+            inputs : NDArray[np.float32],
+            target: NDArray[np.float32],
             step_size : np.float32
         ):
         """Compute backward pass on neuron

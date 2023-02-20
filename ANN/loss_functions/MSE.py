@@ -1,7 +1,7 @@
 """MSE loss object implementation
 """
 import numpy as np
-from ANN import Loss
+from ANN.loss_functions import Loss
 
 
 class MSE(Loss):
