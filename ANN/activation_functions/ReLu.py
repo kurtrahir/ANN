@@ -1,7 +1,7 @@
 """ReLu implementation
 """
-from Activation import Activation
 import numpy as np
+from ANN.activation_functions import Activation
 
 class ReLu(Activation):
     """Implementation of relu activation function

@@ -1,1 +1,4 @@
-*__pycache__/*
+ANN/__pycache__/
+ANN/layers/__pycache__/
+ANN/activation_functions/__pycache__/
+ANN/loss_functions/__pycache__/

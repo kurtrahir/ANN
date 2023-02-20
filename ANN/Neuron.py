@@ -59,12 +59,13 @@ class Neuron:
         """
         output = self.forward(inputs)
 
-        self.weights -= step_size * \
-            (
-                inputs *
-                self.activation.backward((self.weights * inputs + self.bias)) *
+        gradient = inputs * \
+                self.activation.backward((self.weights * inputs + self.bias)) * \
                 self.loss.backward(output, target)
-            )
+
+        self.weights -= step_size * gradient
 
         self.bias -= step_size * \
             self.loss.backward(output, target)
+
+        return gradient

@@ -1,11 +1,9 @@
 """Fully Connected Layer
 """
 
-from Layer import Layer
-from Activation import Activation
-from Loss import Loss
-from Neuron import Neuron
 import numpy as np
+from ANN import Layer, Loss, Neuron
+from ANN.activation_functions import Activation
 
 class Dense(Layer):
     """Implementation of a fully connected layer"""
@@ -31,13 +29,16 @@ class Dense(Layer):
 
 
         def backward(inputs, target, step_size):
+            gradients = []
             for i, neuron in enumerate(self.Neurons):
-                neuron.backward(
-                    inputs,
-                    target[i],
-                    step_size
+                gradients.append(
+                    neuron.backward(
+                        inputs,
+                        target[i],
+                        step_size
+                    )
                 )
-
+            return np.array(gradients)
 
         Layer.__init__(
             self,
