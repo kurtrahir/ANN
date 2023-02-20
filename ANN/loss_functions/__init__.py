@@ -1,2 +1,2 @@
-from .Loss import Loss
-from .MSE import MSE
+from .loss import Loss
+from .square_error import SquareError

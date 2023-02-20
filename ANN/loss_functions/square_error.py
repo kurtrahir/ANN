@@ -4,7 +4,7 @@ import numpy as np
 from ANN.loss_functions import Loss
 
 
-class MSE(Loss):
+class SquareError(Loss):
     """MSE loss object
 
     Args:

@@ -1,2 +1,2 @@
-from .Layer import Layer
-from .Dense import Dense
+from .layer import Layer
+from .dense import Dense
