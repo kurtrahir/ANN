@@ -16,7 +16,7 @@ class Neuron:
         """
         rnd = np.random.default_rng()
         self.weights = rnd.uniform(-1,1,n_inputs)
-        self.bias = rnd.uniform(-1,1,1)
+        self.bias = rnd.uniform(-1,1,n_inputs)
         self.activation = activation
         self.loss = loss
 
@@ -45,7 +45,7 @@ class Neuron:
         Returns:
             np.float64: neuron activation
         """
-        return self.activation.forward( np.dot(inputs, np.transpose(self.weights)) + self.bias)
+        return self.activation.forward( np.dot(inputs, np.transpose(self.weights)) + np.sum(self.bias))
 
 
     def backward(self, inputs, target, step_size):
@@ -59,13 +59,13 @@ class Neuron:
         """
         output = self.forward(inputs)
 
-        gradient = inputs * \
-                self.activation.backward((self.weights * inputs + self.bias)) * \
-                self.loss.backward(output, target)
+        update_term = self.activation.backward((self.weights * inputs + self.bias)) * \
+            self.loss.backward(output, target)
+
+        gradient = inputs * update_term
 
         self.weights -= step_size * gradient
 
-        self.bias -= step_size * \
-            self.loss.backward(output, target)
+        self.bias -= step_size * update_term
 
         return gradient
