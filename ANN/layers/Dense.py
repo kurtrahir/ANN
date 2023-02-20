@@ -2,7 +2,9 @@
 """
 
 import numpy as np
-from ANN import Layer, Loss, Neuron
+from ANN import Neuron
+from ANN.layers import Layer
+from ANN.loss_functions import Loss
 from ANN.activation_functions import Activation
 
 class Dense(Layer):
