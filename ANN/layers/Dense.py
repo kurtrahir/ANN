@@ -13,8 +13,8 @@ class Dense(Layer):
             [
                 Neuron(
                     n_inputs = n_inputs,
-                    activation = activation,
-                    loss = loss
+                    activation_function = activation,
+                    loss_function = loss
                 )
                 for i in range(n_neurons)
             ]
