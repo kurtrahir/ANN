@@ -1,6 +1,8 @@
 """Network implementation
 """
-from ANN import Layer, gorlot
+from ANN import Layer, gorlot, Optimizer
+import numpy as np
+from numpy.typing import NDArray
 
 class Sequential:
     """Implementation of a neural network object
@@ -26,14 +28,26 @@ class Sequential:
             output = self.layers[i].forward(output)
         return output
 
-    def backward(self, inputs, targets, step_size):
+    def backward(
+            self,
+            inputs: NDArray[np.float32],
+            targets : NDArray[np.float32],
+            optimizer: Optimizer):
         """Computes backward pass on the network"""
         outputs = [self.layers[0].forward(inputs)]
         for i in range(1, len(self.layers)):
             outputs.append(self.layers[i].forward(outputs[-1]))
-        targets = self.layers[-1].backward(outputs[-2], targets, step_size)
+        targets = self.layers[-1].backward(
+            outputs[-2],
+            targets,
+            optimizer
+        )
         for i in range(-2, -len(self.layers)):
-            targets = self.layers[i].backward(outputs[i-1], targets, step_size)
+            targets = self.layers[i].backward(
+                outputs[i-1],
+                targets,
+                optimizer
+            )
         self.training_steps += 1
 
     def initialize_gorlot(self) -> None:
