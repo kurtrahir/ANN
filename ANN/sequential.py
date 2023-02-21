@@ -1,6 +1,5 @@
 """Network implementation
 """
-import numpy as np
 from ANN import Layer, gorlot
 
 class Sequential:
