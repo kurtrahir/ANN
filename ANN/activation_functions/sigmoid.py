@@ -1,7 +1,7 @@
 """Sigmoid activation function
 """
 import numpy as np
-from ANN import Activation
+from ANN.activation_functions import Activation
 
 class Sigmoid(Activation):
     """Sigmoid activation function"""

@@ -1,7 +1,7 @@
 """Leaky ReLu implementation"""
 
 import numpy as np
-from ANN import Activation
+from ANN.activation_functions import Activation
 
 class LeakyReLu(Activation):
     """Leaky ReLu class"""
