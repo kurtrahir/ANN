@@ -1,32 +1,37 @@
 """Stochastic Gradient Descent optimizer"""
-from ANN.layers import Layer
-from ANN.optimizers import Optimizer
 import numpy as np
 from numpy.typing import NDArray
-
+from ANN.optimizers import Optimizer
 
 class SGD(Optimizer):
     """Stochastic Gradient Descent Optimizer
     """
-    def __init__(self, step_size):
+    def __init__(self, learning_rate):
 
-        def get_update(
-                layer : Layer,
-                targets : NDArray[np.float32]
+        self.learning_rate = learning_rate
+
+        def backward(
+            model,
+            inputs : NDArray[np.float32],
+            targets : NDArray[np.float32]
         ):
 
-            linear_combination = np.multiply(layer.inputs.T, layer.weights)
-            output = layer.activation_function.forward(
-                np.sum(linear_combination, axis=0))
+            n_samples = inputs.shape[0]
+            gradients = [
+                    np.zeros(layer.weights.shape) for layer in model.layers
+                ]
 
-            update_term = layer.activation_function.backward(linear_combination) * \
-                layer.loss_function.backward(output, targets) * \
-                step_size
+            for sample_idx in range(n_samples):
+                _ = model.forward(inputs[sample_idx].reshape(1,-1))
+                temp_t = targets[sample_idx]
+                for layer_idx in range(1,len(model.layers)):
+                    temp_t = model.layers[-layer_idx].backward(temp_t)
+                    gradients[-layer_idx] += model.layers[-layer_idx].d_weights
 
-            return np.multiply(layer.inputs.T, update_term)
-
+            for i,layer in enumerate(model.layers):
+                layer.weights -= self.learning_rate * gradients[i] / n_samples
 
         Optimizer.__init__(
             self,
-            get_update=get_update
+            backward=backward
         )

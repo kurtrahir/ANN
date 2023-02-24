@@ -6,7 +6,6 @@ from ANN.layers import Layer
 from ANN.layers.initializers import gorlot
 from ANN.activation_functions import Activation
 from ANN.loss_functions import Loss
-from ANN.optimizers import Optimizer
 
 class DenseMatrix(Layer):
 
@@ -17,53 +16,48 @@ class DenseMatrix(Layer):
             activation : Activation,
             loss: Loss
         ):
+        # Store shape of layer
         self.n_inputs = n_inputs
         self.n_neurons = n_neurons
+        # Initialize Weights
         self.weights = gorlot(
             n_inputs,
             n_neurons,
             (n_inputs+1)*n_neurons
         ).reshape(n_inputs + 1, n_neurons)
+        # Create matrix for inputs with added bias term
         self.inputs = np.ones((1, n_inputs+1))
-        self.gradients = np.zeros(self.weights.shape)
+        # Create matrix for activation values
+        self.outputs = np.zeros((1, n_neurons))
+        # Create matrix for weights derivative
+        self.d_weights = np.zeros(self.weights.shape)
+        # Create matrix for inputs derivative
+        self.d_inputs = np.zeros((1,n_inputs))
+        # Set activation and loss function
         self.activation_function = activation
         self.loss_function = loss
+        self.linear_combination = np.zeros(np.dot(self.inputs, self.weights).shape)
 
         def forward(inputs : NDArray[np.float32]) -> NDArray[np.float32]:
-            if len(inputs.shape) != 2:
-                raise ValueError(
-                    f"Expected input array of shape (n_samples, n_inputs), \
-                    but received {inputs.shape}."
-                )
-            outputs = np.zeros((inputs.shape[0], self.n_neurons))
-            for i in range(inputs.shape[0]):
-                self.inputs[:, :-1] = inputs[i]
-                outputs[i] = self.activation_function.forward(np.dot(self.inputs, self.weights))
-            return outputs
+            self.inputs[:, :-1] = inputs
+            self.linear_combination = np.dot(self.inputs, self.weights)
+            self.outputs = self.activation_function.forward(self.linear_combination)
+            return self.outputs
 
         def backward(
-                inputs : NDArray[np.float32],
-                targets : NDArray[np.float32],
-                optimizer : Optimizer
-            ):
-            if len(inputs.shape) != 2:
-                raise ValueError(
-                    f"Expected input array of shape (n_samples, n_inputs), but received {inputs.shape}."
-                )
-            factor = 1 / inputs.shape[0]
-            self.gradients = 0
-            for i in range(inputs.shape[0]):
+            targets: NDArray[np.float32]
+        ):
+            # Get loss derivative with regards to output.
+            d_loss = self.loss_function.backward(self.outputs, targets)
+            # Get derivative of outputs with regards to dot product
+            d_activation = self.activation_function.backward(self.linear_combination)
+            # Derivative of dot product with regards to weights is the inputs.
+            # Get derivative of loss with regards to weights:
+            self.d_weights = np.dot(self.inputs.T, d_loss * d_activation)
 
-                self.inputs[:,:-1] = inputs[i]
+            # Get derivative of output with regards to inputs.
+            self.d_inputs = np.dot(d_loss * d_activation, self.weights[:-1,:].T)
 
-                self.gradients += optimizer.get_update(
-                    self,
-                    targets[i]
-                ) * factor
+            return self.d_inputs
 
-            self.weights -= self.gradients
-
-            return np.sum(self.gradients, axis=0)
-
-        Layer.__init__(self, forward, backward)
-    
+        Layer.__init__(self, forward, backward, self.d_weights)

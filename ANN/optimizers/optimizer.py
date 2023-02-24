@@ -8,7 +8,7 @@ class Optimizer():
     "Generic optimizer interface"
     def __init__(
         self,
-        get_update : Callable[[], NDArray[np.float32]]
+        backward : Callable[[], NDArray[np.float32]],
     ):
-        self.get_update = get_update
+        self.backward = backward
         self.epochs = 0
