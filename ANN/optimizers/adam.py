@@ -3,11 +3,11 @@
 import numpy as np
 from numpy.typing import NDArray
 from ANN.optimizers import Optimizer
-
+from ANN.loss_functions import Loss
 
 class Adam(Optimizer):
-
-    def __init__(self, beta_1 = 0.9, beta_2 = 0.999, learning_rate = 1e-3, epsilon = 1e-15):
+    """Implementation of the Adam optimizer"""
+    def __init__(self, loss : Loss, beta_1 = 0.9, beta_2 = 0.999, learning_rate = 1e-3, epsilon = 1e-15):
 
         self.momentums = {}
         self.beta_1 = beta_1
@@ -29,34 +29,24 @@ class Adam(Optimizer):
 
             n_samples = inputs.shape[0]
             n_inputs = inputs.shape[1]
-            n_layers = len(model.layers)
             gradients =  [
                     np.zeros(layer.weights.shape) for layer in model.layers
                 ]
 
-            for i in range(n_samples):
-                outputs = model.layers[0].forward(
-                    inputs[i].reshape(-1, n_inputs))
-                for i in range(1, len(model.layers)):
-                    outputs = model.layers[i].forward(outputs)
+            for sample_idx in range(n_samples):
+                pred = model.forward(inputs[sample_idx].reshape(-1, n_inputs))
+                temp_t = self.loss.backward(pred, targets[sample_idx])
+                for layer_idx in range(1, len(model.layers)+1):
+                    temp_t = model.layers[-layer_idx].backward(temp_t)
+                    gradients[-layer_idx] += model.layers[-layer_idx].d_weights
 
-                gradients[-1] += self.get_update(
-                    model.layers[-1].backward(targets),
-                    n_layers-1
-                )
-                for i in range(2, len(model.layers)):
-                    gradients[-i] += self.get_update(
-                        model.layers[-i].backward(
-                            gradients[-i+1]
-                        ),
-                        n_layers-i
-                    )
-                
-                for i, layer in enumerate(model.layers):
-                    layer.weights -= self.learning_rate * gradients[i] / n_samples
+            for i, layer in enumerate(model.layers):
+                gradients[i] = self.get_update(gradients[i], i)
+                layer.weights -= self.learning_rate * gradients[i] / n_samples
 
         Optimizer.__init__(
             self,
+            loss=loss,
             backward=backward
         )
 

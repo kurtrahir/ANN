@@ -1,20 +1,19 @@
-"""Dense layer implementation ommitting neuron objects
+"""Dense layer implementation
 """
 import numpy as np
 from numpy.typing import NDArray
 from ANN.layers import Layer
 from ANN.layers.initializers import gorlot
 from ANN.activation_functions import Activation
-from ANN.loss_functions import Loss
 
-class DenseMatrix(Layer):
-
+class Dense(Layer):
+    """Implementation of a densely connected layer
+    """
     def __init__(
             self,
             n_inputs : int,
             n_neurons : int,
-            activation : Activation,
-            loss: Loss
+            activation : Activation
         ):
         # Store shape of layer
         self.n_inputs = n_inputs
@@ -35,7 +34,6 @@ class DenseMatrix(Layer):
         self.d_inputs = np.zeros((1,n_inputs))
         # Set activation and loss function
         self.activation_function = activation
-        self.loss_function = loss
         self.linear_combination = np.zeros(np.dot(self.inputs, self.weights).shape)
 
         def forward(inputs : NDArray[np.float32]) -> NDArray[np.float32]:
@@ -45,18 +43,15 @@ class DenseMatrix(Layer):
             return self.outputs
 
         def backward(
-            targets: NDArray[np.float32]
+            error: NDArray[np.float32]
         ):
-            # Get loss derivative with regards to output.
-            d_loss = self.loss_function.backward(self.outputs, targets)
             # Get derivative of outputs with regards to dot product
             d_activation = self.activation_function.backward(self.linear_combination)
             # Derivative of dot product with regards to weights is the inputs.
             # Get derivative of loss with regards to weights:
-            self.d_weights = np.dot(self.inputs.T, d_loss * d_activation)
-
+            self.d_weights = np.dot(self.inputs.T, error * d_activation)
             # Get derivative of output with regards to inputs.
-            self.d_inputs = np.dot(d_loss * d_activation, self.weights[:-1,:].T)
+            self.d_inputs = np.dot(error * d_activation, self.weights[:-1,:].T)
 
             return self.d_inputs
 
