@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: ANN-kurtrahir
+Version: 0.0.1
+Summary: A package for fully connected neural networks.
+Author-email: Kurt Rahir <kurtrahir@gmail.com>
+Project-URL: Homepage, https://github.com/kurtrahir/ANN
+Project-URL: Bug Tracker, https://github.com/kurtrahir/ANN/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown

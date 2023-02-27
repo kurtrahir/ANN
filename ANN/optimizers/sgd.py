@@ -1,6 +1,7 @@
 """Stochastic Gradient Descent optimizer"""
 import numpy as np
 from numpy.typing import NDArray
+
 from ANN.loss_functions.loss import Loss
 from ANN.optimizers import Optimizer
 
@@ -9,11 +10,9 @@ class SGD(Optimizer):
     """Stochastic Gradient Descent Optimizer"""
 
     def __init__(self, loss: Loss, learning_rate: np.float32):
-
         self.learning_rate = learning_rate
 
         def backward(model, inputs: NDArray[np.float32], targets: NDArray[np.float32]):
-
             n_samples = inputs.shape[0]
             gradients = [np.zeros(layer.weights.shape) for layer in model.layers]
 

@@ -1,6 +1,6 @@
-from .activation_functions import Linear, ReLu, Activation, LeakyReLu, TanH, Sigmoid
-from .loss_functions import Loss, MSE, BinaryCrossEntropy
-from .neuron import Neuron
-from .layers import Layer, Dense, gorlot
+from .activation_functions import Activation, LeakyReLu, Linear, ReLu, Sigmoid, TanH
+from .layers import Dense, Layer, gorlot
+from .loss_functions import MSE, BinaryCrossEntropy, Loss
 from .models import Model, Sequential
-from .optimizers import Optimizer, SGD, Adam
+from .neuron import Neuron
+from .optimizers import SGD, Adam, Optimizer

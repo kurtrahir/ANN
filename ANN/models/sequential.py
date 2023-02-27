@@ -3,9 +3,10 @@
 
 import numpy as np
 from numpy.typing import NDArray
+
 from ANN.layers import Layer
-from ANN.optimizers import Optimizer
 from ANN.models import Model
+from ANN.optimizers import Optimizer
 
 
 class Sequential(Model):

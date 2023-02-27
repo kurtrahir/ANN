@@ -3,18 +3,17 @@
 
 import numpy as np
 from numpy.typing import NDArray
+
 from ANN.activation_functions import Activation
 from ANN.loss_functions import Loss
 
+
 class Neuron:
-    """Implementation of a single neuron for a neural network.
-    """
+    """Implementation of a single neuron for a neural network."""
+
     def __init__(
-            self,
-            n_inputs : int,
-            activation_function : Activation,
-            loss_function : Loss
-        ):
+        self, n_inputs: int, activation_function: Activation, loss_function: Loss
+    ):
         """Initialize the neuron with random weights and bias
 
         Args:
@@ -23,20 +22,20 @@ class Neuron:
             loss (Loss): Loss function object
         """
         rnd = np.random.default_rng()
-        self.weights = rnd.uniform(-1,1,n_inputs+1)
-        self.inputs = np.ones((n_inputs+1))
+        self.weights = rnd.uniform(-1, 1, n_inputs + 1)
+        self.inputs = np.ones((n_inputs + 1))
         self.activation_function = activation_function
         self.loss_function = loss_function
         self.linear_combination = np.zeros(self.weights.shape)
         self.gradients = np.zeros(self.weights.shape)
 
     def set(
-            self,
-            weights: NDArray[np.float32],
-            bias: np.float32,
-            activation_function : Activation,
-            loss_function : Loss
-        ):
+        self,
+        weights: NDArray[np.float32],
+        bias: np.float32,
+        activation_function: Activation,
+        loss_function: Loss,
+    ):
         """Set the properties of the neuron
 
         Args:
@@ -49,7 +48,7 @@ class Neuron:
         self.activation_function = activation_function
         self.loss_function = loss_function
 
-    def set_weights(self, new_weights : NDArray[np.float32]) -> None:
+    def set_weights(self, new_weights: NDArray[np.float32]) -> None:
         """Setter for neuron's weights
 
         Args:
@@ -62,10 +61,7 @@ class Neuron:
             )
         self.weights = new_weights
 
-    def forward(
-            self,
-            inputs: NDArray[np.float32]
-        ):
+    def forward(self, inputs: NDArray[np.float32]):
         """Compute forward pass on neuron
 
         Args:
@@ -78,13 +74,12 @@ class Neuron:
         self.linear_combination = self.inputs * self.weights
         return self.activation_function.forward(np.sum(self.linear_combination))
 
-
     def backward(
-            self,
-            inputs : NDArray[np.float32],
-            target: NDArray[np.float32],
-            step_size : np.float32
-        ):
+        self,
+        inputs: NDArray[np.float32],
+        target: NDArray[np.float32],
+        step_size: np.float32,
+    ):
         """Compute backward pass on neuron
 
         Args:
@@ -95,9 +90,11 @@ class Neuron:
         """
         output = self.forward(inputs)
 
-        update_term = self.activation_function.backward(self.linear_combination) * \
-            self.loss_function.backward(output, target) * \
-            step_size
+        update_term = (
+            self.activation_function.backward(self.linear_combination)
+            * self.loss_function.backward(output, target)
+            * step_size
+        )
 
         self.gradients = self.inputs * update_term
 

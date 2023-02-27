@@ -1,10 +1,12 @@
 """Convolutional layer implementation
 """
 
-from typing import Tuple, Union, Literal
+from typing import Literal, Tuple, Union
+
 import numpy as np
-from ANN.layers import Layer
+
 from ANN.activation_functions import Activation
+from ANN.layers import Layer
 
 
 class Conv2D(Layer):
@@ -17,7 +19,10 @@ class Conv2D(Layer):
         padding: Union[int, Tuple[int, int], Literal["Same"]],
     ):
         self.n_filters = n_filters
-        unpack = lambda x: (x, x) if isinstance(x, int) else x
+
+        def unpack(x):
+            return (x, x) if isinstance(x, int) else x
+
         self.kernel_size = unpack(kernel_size)
         self.step_size = unpack(step_size)
         self.padding = unpack(padding)

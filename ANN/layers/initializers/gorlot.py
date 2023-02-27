@@ -2,7 +2,9 @@
 """
 import numpy as np
 from numpy.typing import NDArray
-def gorlot(n_inputs:int, n_neurons:int, n_weights :int) -> NDArray[np.float32]:
+
+
+def gorlot(n_inputs: int, n_neurons: int, n_weights: int) -> NDArray[np.float32]:
     """Generate weights according to gorlot
 
     Args:

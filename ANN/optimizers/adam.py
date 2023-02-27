@@ -2,8 +2,9 @@
 
 import numpy as np
 from numpy.typing import NDArray
-from ANN.optimizers import Optimizer
+
 from ANN.loss_functions import Loss
+from ANN.optimizers import Optimizer
 
 
 class Adam(Optimizer):
@@ -12,7 +13,6 @@ class Adam(Optimizer):
     def __init__(
         self, loss: Loss, beta_1=0.9, beta_2=0.999, learning_rate=1e-3, epsilon=1e-15
     ):
-
         self.momentums = {}
         self.beta_1 = beta_1
         self.beta_2 = beta_2
