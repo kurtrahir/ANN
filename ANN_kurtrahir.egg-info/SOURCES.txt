@@ -11,15 +11,15 @@ ANN/activation_functions/tanh.py
 ANN/errors/__init__.py
 ANN/errors/shapeError.py
 ANN/layers/__init__.py
+ANN/layers/convolutional.py
 ANN/layers/dense.py
-ANN/layers/dense_matrix.py
 ANN/layers/layer.py
 ANN/layers/initializers/__init__.py
 ANN/layers/initializers/gorlot.py
 ANN/loss_functions/__init__.py
 ANN/loss_functions/binary_cross_entropy.py
 ANN/loss_functions/loss.py
-ANN/loss_functions/square_error.py
+ANN/loss_functions/mean_square_error.py
 ANN/models/__init__.py
 ANN/models/model.py
 ANN/models/sequential.py

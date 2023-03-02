@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from ANN.loss_functions import Loss
+from ANN.loss_functions.loss import Loss
 
 
 class BinaryCrossEntropy(Loss):

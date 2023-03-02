@@ -4,8 +4,9 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ANN.activation_functions import Activation
-from ANN.layers import Layer
+from ANN.errors.shapeError import ShapeError
 from ANN.layers.initializers import gorlot
+from ANN.layers.layer import Layer
 
 
 class Dense(Layer):
@@ -32,6 +33,11 @@ class Dense(Layer):
         self.linear_combination = np.zeros(np.dot(self.inputs, self.weights).shape)
 
         def forward(inputs: NDArray[np.float32]) -> NDArray[np.float32]:
+            if len(inputs.shape) != 2:
+                raise ShapeError(
+                    f"Densely connected layer expected input vector of shape (n_samples, n_inputs), \
+                    received {inputs.shape} instead."
+                )
             self.inputs[:, :-1] = inputs
             self.linear_combination = np.dot(self.inputs, self.weights)
             self.outputs = self.activation_function.forward(self.linear_combination)
@@ -48,4 +54,4 @@ class Dense(Layer):
 
             return self.d_inputs
 
-        Layer.__init__(self, forward, backward, self.d_weights)
+        Layer.__init__(self, forward, backward, self.d_weights, True)

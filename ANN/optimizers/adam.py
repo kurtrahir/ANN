@@ -4,7 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ANN.loss_functions import Loss
-from ANN.optimizers import Optimizer
+from ANN.optimizers.optimizer import Optimizer
 
 
 class Adam(Optimizer):
