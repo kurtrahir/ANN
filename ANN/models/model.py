@@ -1,6 +1,6 @@
 """Generic Model Interface"""
 import warnings
-from typing import Callable
+from typing import Callable, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -20,12 +20,14 @@ class Model:
         backward: Callable[[NDArray[np.float32], NDArray[np.float32], Optimizer], None],
         layers: list[Layer],
         optimizer: Optimizer,
+        initialize_weights: Callable[[Union[int, Tuple[int, ...]]], None],
     ):
         self.forward = forward
         self.backward = backward
         self.optimizer = optimizer
         self.layers = layers
         self.history = {"training_loss": {}, "validation_loss": {}}
+        self.initialize_weights = initialize_weights
 
     def train(
         self,
@@ -61,6 +63,8 @@ class Model:
                 "Number of samples not evenly divisible by batch size.\
                 Smaller batch will occur."
             )
+
+        self.initialize_weights(train_x[0].shape)
 
         for _ in range(epochs):
             print(f"Epoch : {self.optimizer.epochs+1}")

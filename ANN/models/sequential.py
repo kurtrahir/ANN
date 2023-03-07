@@ -13,15 +13,25 @@ class Sequential(Model):
     """Implementation of a neural network object"""
 
     def __init__(self, layers: list[Layer], optimizer: Optimizer):
-        def forward(inputs):
+        self.initialized = False
+
+        def initialize_weights(input_shape):
+            for layer in self.layers:
+                layer.initialize_weights(input_shape)
+                input_shape = layer.output_shape
+            self.initialized = True
+
+        def forward(inputs: NDArray[np.float32]):
             """Computes forward pass on the network"""
 
-            def one_forward(one_input):
+            def one_forward(one_x):
                 """Pass one sample through the model"""
-                layer_output = self.layers[0].forward(one_input)
-                for j in range(1, len(self.layers)):
-                    layer_output = self.layers[j].forward(layer_output)
-                return layer_output
+                for layer in self.layers:
+                    one_x = layer.forward(one_x)
+                return one_x
+
+            if self.initialized is False:
+                initialize_weights(inputs[0].shape)
 
             # Get dummt output for shape
             dummy_output = one_forward(inputs[0])
@@ -37,7 +47,14 @@ class Sequential(Model):
             # Hand off backward pass to optimizer
             self.optimizer.backward(self, inputs, targets)
 
-        Model.__init__(self, forward, backward, layers, optimizer)
+        Model.__init__(
+            self,
+            forward=forward,
+            backward=backward,
+            layers=layers,
+            optimizer=optimizer,
+            initialize_weights=initialize_weights,
+        )
 
     def add_layer(self, layer):
         """Add layer to network
