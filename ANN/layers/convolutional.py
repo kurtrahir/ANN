@@ -10,6 +10,7 @@ from numpy.typing import NDArray
 
 from ANN.activation_functions.activation import Activation
 from ANN.activation_functions.reLu import ReLu
+from ANN.correlate import corr2d_multi_in_out
 from ANN.errors.shapeError import ShapeError
 from ANN.layers.initializers import gorlot
 from ANN.layers.layer import Layer
@@ -61,25 +62,16 @@ class Conv2D(Layer):
             if len(inputs.shape) == 2:
                 inputs = inputs.reshape(*inputs.shape, 1)
 
-            # If first time seeing input shape, initiale layer.
+            # If first time seeing input shape, initiaze layer.
             if self.initialized is False:
                 initialize_weights(inputs.shape)
 
             self.inputs = pad(inputs, self.kernel_shape, self.step_size, self.padding)
 
-            self.lin_comb = np.zeros(self.output_shape)
-            for kernel in range(self.n_filters):
-                self.lin_comb[:, :, kernel] = (
-                    np.sum(
-                        corr2d(
-                            self.inputs,
-                            self.weights[kernel, :, :, :],
-                            self.step_size,
-                        ),
-                        axis=2,
-                    )
-                    + self.bias[kernel]
-                )
+            self.lin_comb = (
+                corr2d_multi_in_out(self.inputs, self.weights, self.step_size)
+                + self.bias
+            )
 
             self.outputs = self.activation_function.forward(self.lin_comb)
 
@@ -105,42 +97,46 @@ class Conv2D(Layer):
 
                 return output
 
-            # Get loss function gradient
-            error = self.activation_function.backward(self.lin_comb) * error
-            self.d_bias = np.sum(np.multiply(error, self.outputs), axis=(0, 1))
+            # Get activation function gradient
+            d_activation = self.activation_function.backward(self.lin_comb) * error
+
+            # Get bias gradient
+            self.d_bias = np.sum(np.multiply(d_activation, self.outputs), axis=(0, 1))
 
             # Dilate Error
             if self.step_size != (1, 1):
-                error = dilate(error, self.step_size)
+                d_activation = dilate(d_activation, self.step_size)
 
             # Rotate Kernel
             rot_weights = np.rot90(self.weights, 2, (1, 2))
 
-            for weight_channel in range(n_filters):
-                self.d_weights[weight_channel, :, :, :] = corr2d(
-                    self.inputs,
-                    np.repeat(
-                        error[:, :, weight_channel : weight_channel + 1],
-                        self.padded_shape[2],
-                        axis=2,
+            for c in range(self.d_weights.shape[-1]):
+                self.d_weights[..., c] = np.swapaxes(
+                    corr2d_multi_in_out(
+                        self.inputs[:, :, c, np.newaxis],
+                        np.swapaxes(d_activation, 2, 0)[..., np.newaxis],
+                        (1, 1),
                     ),
+                    2,
+                    0,
                 )
 
             if self.step_size != (1, 1):
-                pad_w = self.step_size[0] - 1
-                pad_h = self.step_size[1] - 1
-                error = np.pad(
-                    error, [[pad_w, pad_w], [pad_h, pad_h], [0, 0]], "constant"
+                pad_w = self.kernel_shape[0] - 1
+                pad_h = self.kernel_shape[1] - 1
+                d_activation = np.pad(
+                    d_activation, [[pad_w, pad_w], [pad_h, pad_h], [0, 0]], "constant"
                 )
             else:
-                error = pad(error, self.kernel_shape, self.step_size, "full")
+                d_activation = pad(
+                    d_activation, self.kernel_shape, self.step_size, "full"
+                )
 
             input_gradient = np.zeros(self.padded_shape)
 
-            for channel in range(self.padded_shape[2]):
-                input_gradient[:, :, channel] = np.sum(
-                    corr2d(error, rot_weights[channel, :, :, :]), axis=2
-                )
+            input_gradient = corr2d_multi_in_out(
+                d_activation, np.swapaxes(rot_weights, 3, 0), (1, 1)
+            )
 
             if self.padding == "valid":
                 if self.padded_shape < self.input_shape:
@@ -151,21 +147,6 @@ class Conv2D(Layer):
                     )
 
             return input_gradient
-
-        def corr2d(
-            input_a: NDArray[np.float32],
-            input_b: NDArray[np.float32],
-            step_size: Tuple[int, int] = (1, 1),
-        ):
-            b_h, b_w, b_z = input_b.shape
-            output_shape = get_shape(input_a.shape, input_b.shape, step_size)
-            output = np.zeros((*output_shape, b_z))
-            for i in range(0, output_shape[0], step_size[0]):
-                for j in range(0, output_shape[1], step_size[1]):
-                    output[i, j, :] = np.sum(
-                        np.multiply(input_a[i : i + b_h, j : j + b_w, :], input_b)
-                    )
-            return output
 
         def pad(
             input_a: NDArray[np.float32],
