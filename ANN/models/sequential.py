@@ -21,19 +21,23 @@ class Sequential(Model):
                 input_shape = layer.output_shape
             self.initialized = True
 
+        def one_forward(one_x):
+            """Pass one sample through the model"""
+            for layer in self.layers:
+                one_x = layer.forward(one_x)
+            return one_x
+
+        def one_backward(one_y):
+            """Pass one sample through the model"""
+            for i in range(-1, -(len(self.layers) + 1), -1):
+                one_y = self.layers[i].backward(one_y)
+
         def forward(inputs: NDArray[np.float32]):
             """Computes forward pass on the network"""
-
-            def one_forward(one_x):
-                """Pass one sample through the model"""
-                for layer in self.layers:
-                    one_x = layer.forward(one_x)
-                return one_x
-
             if self.initialized is False:
                 initialize_weights(inputs[0].shape)
 
-            # Get dummt output for shape
+            # Get dummy output for shape
             dummy_output = one_forward(inputs[0])
             output = np.zeros((inputs.shape[0], *dummy_output.shape[1:]))
             output[0] = dummy_output
@@ -41,6 +45,16 @@ class Sequential(Model):
             for i in range(1, inputs.shape[0]):
                 output[i] = one_forward(inputs[i])
             return output
+
+        def accumulate_gradients(
+            inputs: NDArray[np.float32], targets: NDArray[np.float32]
+        ):
+            for sample in range(inputs.shape[0]):
+                one_backward(
+                    self.optimizer.loss.backward(
+                        one_forward(inputs[sample]), targets[sample]
+                    )
+                )
 
         def backward(inputs: NDArray[np.float32], targets: NDArray[np.float32]):
             """Computes backward pass on the network"""
@@ -54,6 +68,7 @@ class Sequential(Model):
             layers=layers,
             optimizer=optimizer,
             initialize_weights=initialize_weights,
+            accumulate_gradients=accumulate_gradients,
         )
 
     def add_layer(self, layer):

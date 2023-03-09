@@ -34,51 +34,25 @@ class Adam(Optimizer):
                         }
 
             n_samples = inputs.shape[0]
-            inputs_shape = inputs.shape[1:]
-            gradients = []
-            bias_gradients = []
-            for layer in model.layers:
-                if layer.has_weights:
-                    gradients.append(np.zeros(layer.d_weights.shape))
-                if layer.has_bias:
-                    bias_gradients.append(np.zeros(layer.d_bias.shape))
-                # Iterate over batch
-            for sample_idx in range(n_samples):
-                # Compute forward pass on network, obtaining predictions and
-                # setting internal variables required for backward pass.
-                pred = model.forward(inputs[sample_idx].reshape(-1, *inputs_shape))
-                # Compute loss derivative (error term for output layer)
-                temp_t = self.loss.backward(pred, targets[sample_idx])
-                # Backpropagate through network, accumulating gradients
-                gradient_idx = -1
-                bias_idx = -1
-                for layer_idx in range(1, len(model.layers) + 1):
-                    temp_t = model.layers[-layer_idx].backward(temp_t)
-                    if model.layers[-layer_idx].has_weights:
-                        gradients[gradient_idx] += model.layers[-layer_idx].d_weights
-                        gradient_idx -= 1
-                    if model.layers[-layer_idx].has_bias:
-                        bias_gradients[bias_idx] += model.layers[-layer_idx].d_bias
-                        bias_idx -= 1
+            # Accumulate gradients
+            model.accumulate_gradients(inputs, targets)
             # Update weights by obtaining adam update term, averaging over batch
             # and multiplying by learning rate.
-            gradient_idx = 0
-            bias_idx = 0
             for i, layer in enumerate(model.layers):
                 if layer.has_weights:
                     layer.weights -= (
                         self.learning_rate
-                        * self.get_update(gradients[gradient_idx], i)
+                        * self.get_update(layer.d_weights, i)
                         / n_samples
                     )
-                    gradient_idx += 1
                 if layer.has_bias:
                     layer.bias -= (
                         self.learning_rate
-                        * self.get_update(bias_gradients[bias_idx], f"bias_{bias_idx}")
+                        * self.get_update(layer.d_bias, f"bias_{i}")
                         / n_samples
                     )
-                    bias_idx += 1
+
+            model.clear_gradients()
 
         Optimizer.__init__(self, loss=loss, backward=backward)
 

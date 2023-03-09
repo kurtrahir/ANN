@@ -6,6 +6,7 @@ from functools import reduce
 from typing import Literal, Optional, Tuple, Union
 
 import numpy as np
+from numba import njit
 from numpy.typing import NDArray
 
 from ANN.activation_functions.activation import Activation
@@ -78,22 +79,18 @@ class Conv2D(Layer):
             return self.outputs
 
         def backward(error: NDArray[np.float32]):
-            def dilate(to_dilate: NDArray[np.float32], step_size: Tuple[int, int]):
+            def dilate(
+                array: NDArray[np.float32], step_size: Tuple[int, int]
+            ) -> NDArray[np.float32]:
                 output = np.zeros(
                     (
-                        to_dilate.shape[0]
-                        + (step_size[0] - 1) * (to_dilate.shape[0] - 1),
-                        to_dilate.shape[1]
-                        + (step_size[1] - 1) * (to_dilate.shape[1] - 1),
-                        to_dilate.shape[2],
+                        array.shape[0] + (step_size[0] - 1) * (array.shape[0] - 1),
+                        array.shape[1] + (step_size[1] - 1) * (array.shape[1] - 1),
+                        array.shape[2],
                     )
                 )
 
-                for i in range(to_dilate.shape[0]):
-                    for j in range(to_dilate.shape[1]):
-                        output[i * step_size[0], j * step_size[1], :] = to_dilate[
-                            i, j, :
-                        ]
+                output[:: step_size[0], :: step_size[1]] = array
 
                 return output
 
@@ -101,7 +98,7 @@ class Conv2D(Layer):
             d_activation = self.activation_function.backward(self.lin_comb) * error
 
             # Get bias gradient
-            self.d_bias = np.sum(np.multiply(d_activation, self.outputs), axis=(0, 1))
+            self.d_bias += np.sum(d_activation * self.outputs, axis=(0, 1))
 
             # Dilate Error
             if self.step_size != (1, 1):
@@ -111,7 +108,7 @@ class Conv2D(Layer):
             rot_weights = np.rot90(self.weights, 2, (1, 2))
 
             for c in range(self.d_weights.shape[-1]):
-                self.d_weights[..., c] = np.swapaxes(
+                self.d_weights[..., c] += np.swapaxes(
                     corr2d_multi_in_out(
                         self.inputs[:, :, c, np.newaxis],
                         np.swapaxes(d_activation, 2, 0)[..., np.newaxis],
@@ -165,14 +162,18 @@ class Conv2D(Layer):
             Returns:
                 NDArray[np.float32]: Padded array
             """
+
+            def get_max_valid_idx(size_a, size_b, stride):
+                res = (size_a - size_b) % stride
+                return -res if res != 0 else size_a
+
+            def get_size(width, kernel_size, stride):
+                return np.ceil((stride * (width - 1) - width + kernel_size) / 2).astype(
+                    int
+                )
+
             pad_size = (0, 0)
             if padding == "same":
-
-                def get_size(width, kernel_size, stride):
-                    return np.ceil(
-                        (stride * (width - 1) - width + kernel_size) / 2
-                    ).astype(int)
-
                 pad_size = (
                     get_size(input_a.shape[0], shape_b[0], step_size[0]),
                     get_size(input_a.shape[1], shape_b[1], step_size[1]),
@@ -180,23 +181,16 @@ class Conv2D(Layer):
             elif padding == "full":
                 pad_size = (shape_b[0] - 1, shape_b[1] - 1)
             elif padding == "valid":
-
-                def get_max_valid_idx(size_a, size_b, stride):
-                    res = (size_a - size_b) % stride
-                    return -res if res != 0 else size_a
-
-                input_a = input_a[
+                return input_a[
                     : get_max_valid_idx(input_a.shape[0], shape_b[0], step_size[0]),
                     : get_max_valid_idx(input_a.shape[1], shape_b[1], step_size[1]),
                     :,
                 ]
-
             padded_input = np.pad(
                 input_a,
                 [[pad_size[0], pad_size[0]], [pad_size[1], pad_size[1]], [0, 0]],
                 "constant",
             )
-
             return padded_input
 
         # utility function for shorthand in the case of a square filter (3) -> (3,3)
