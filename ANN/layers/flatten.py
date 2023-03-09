@@ -15,7 +15,7 @@ class Flatten(Layer):
 
         def forward(inputs):
             self.input_shape = inputs.shape
-            return inputs.reshape(1, -1)
+            return inputs.reshape(inputs.shape[0], -1)
 
         def backward(inputs):
             return inputs.reshape(self.input_shape)

@@ -18,43 +18,6 @@ def get_shape(shape_a, shape_b, step_size):
     )
 
 
-def corr2d(
-    input_a: NDArray[np.float32],
-    input_b: NDArray[np.float32],
-    step_size: Tuple[int, int],
-):
-    """Computes 2D correlation.
-
-    Args:
-        input_a (NDArray[np.float32]): Input to correlate.
-        input_b (NDArray[np.float32]): Input to correlate with.
-        step_size (Tuple[int,int]): Step size for correlation.
-
-    Returns:
-        NDArray[np.float32]: Correlation result.
-    """
-    return np.einsum("ijkl,kl->ij", get_strided_view(**locals()), input_b)
-
-
-def corr2d_multi_in(
-    input_a: NDArray[np.float32],
-    input_b: NDArray[np.float32],
-    step_size: Tuple[int, int],
-):
-    """Computes 2D correlation when input has multiple input channels.
-
-    Args:
-        input_a (NDArray[np.float32]): Input to correlate.
-        input_b (NDArray[np.float32]): Input to correlate with.
-        step_size (Tuple[int,int]): Step size for correlation.
-
-    Returns:
-        NDArray[np.float32]: Correlation result.
-    """
-    # Correlate
-    return np.einsum("ijklm,klm->ij", get_strided_view(**locals()), input_b)
-
-
 def corr2d_multi_in_out(
     input_a: NDArray[np.float32],
     input_b: NDArray[np.float32],
@@ -70,7 +33,7 @@ def corr2d_multi_in_out(
     Returns:
         NDArray[np.float32]: Correlation result.
     """
-    return np.einsum("ijklmn,klmn->ijk", get_strided_view(**locals()), input_b)
+    return np.einsum("ijklmno,lmno->ijkl", get_strided_view(**locals()), input_b)
 
 
 def get_strided_view(
@@ -89,7 +52,9 @@ def get_strided_view(
     return np.lib.stride_tricks.as_strided(
         x=input_a,
         shape=(
-            get_shape(input_a.shape, input_b.shape, step_size=step_size) + input_b.shape
+            (input_a.shape[0],)
+            + get_shape(input_a.shape[1:], input_b.shape, step_size=step_size)
+            + input_b.shape
         ),
         strides=get_strides(**locals()),
         writeable=False,
@@ -111,13 +76,15 @@ def get_strides(
     """
     if len(input_b.shape) < 4:
         return (
-            input_a.strides[0] * step_size[0],
-            input_a.strides[1] * step_size[1],
-            *input_a.strides,
+            input_a.strides[0],
+            input_a.strides[1] * step_size[0],
+            input_a.strides[2] * step_size[1],
+            *input_a.strides[1:],
         )
     return (
-        input_a.strides[0] * step_size[0],
-        input_a.strides[1] * step_size[1],
+        input_a.strides[0],
+        input_a.strides[1] * step_size[0],
+        input_a.strides[2] * step_size[1],
         0,
-        *input_a.strides,
+        *input_a.strides[1:],
     )

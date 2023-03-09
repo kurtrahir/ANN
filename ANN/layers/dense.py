@@ -7,6 +7,7 @@ from numpy.typing import NDArray
 
 from ANN.activation_functions.activation import Activation
 from ANN.activation_functions.reLu import ReLu
+from ANN.errors.shapeError import ShapeError
 from ANN.layers.initializers import gorlot
 from ANN.layers.layer import Layer
 
@@ -64,15 +65,21 @@ class Dense(Layer):
             """Compute forward pass
 
             Args:
-                inputs (NDArray[np.float32]): Input array containing one sample.
+                inputs (NDArray[np.float32]): Input array of shape (n_samples, n_inputs)
 
             Returns:
                 NDArray[np.float32]: Activation values.
             """
+            if len(inputs.shape) != 2:
+                raise ShapeError(
+                    f"Expected input to have shape (n_samples, n_inputs). \
+                    Received {inputs.shape=} instead."
+                )
+
             if self.initialized is False:
                 initialize_weights(inputs[0].shape)
             # Set input values (skipping bias at the end of the input array property)
-            self.inputs[0, :-1] = inputs.reshape(1, -1)
+            self.inputs = np.append(inputs, np.ones((inputs.shape[0], 1)), axis=1)
             self.linear_combo = np.dot(self.inputs, self.weights)
             # Compute and store activations
             self.outputs = self.activation_function.forward(self.linear_combo)
@@ -84,15 +91,19 @@ class Dense(Layer):
 
             Args:
                 error (NDArray[np.float32]): Error matrix to propagate.
+                Expect shape (n_samples, activations)
 
             Returns:
                 NDArray[np.float32]: Input gradients for backpropagation.
+                Shape (n_samples, input gradients)
             """
             # Get derivative of outputs with regards to dot product
             d_activation = self.activation_function.backward(self.linear_combo)
             # Get derivative of loss with regards to weights and store in
             # gradient property
-            self.d_weights += np.dot(self.inputs.T, error * d_activation)
+            self.d_weights += np.sum(
+                np.dot(self.inputs.T, error * d_activation), axis=0
+            )
             # Get derivative of output with regards to inputs.
             return np.dot(error * d_activation, self.weights[:-1, :].T)
 

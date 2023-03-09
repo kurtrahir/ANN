@@ -35,21 +35,20 @@ class Adam(Optimizer):
 
             n_samples = inputs.shape[0]
             # Accumulate gradients
-            model.accumulate_gradients(inputs, targets)
+            outputs = model.forward(inputs)
+            d_loss = self.loss.backward(outputs, targets)
+            for layer in model.layers[::-1]:
+                d_loss = layer.backward(d_loss)
             # Update weights by obtaining adam update term, averaging over batch
             # and multiplying by learning rate.
             for i, layer in enumerate(model.layers):
                 if layer.has_weights:
-                    layer.weights -= (
-                        self.learning_rate
-                        * self.get_update(layer.d_weights, i)
-                        / n_samples
+                    layer.weights -= self.learning_rate * self.get_update(
+                        layer.d_weights / n_samples, i
                     )
                 if layer.has_bias:
-                    layer.bias -= (
-                        self.learning_rate
-                        * self.get_update(layer.d_bias, f"bias_{i}")
-                        / n_samples
+                    layer.bias -= self.learning_rate * self.get_update(
+                        layer.d_bias / n_samples, f"bias_{i}"
                     )
 
             model.clear_gradients()

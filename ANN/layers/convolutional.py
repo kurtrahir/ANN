@@ -6,12 +6,12 @@ from functools import reduce
 from typing import Literal, Optional, Tuple, Union
 
 import numpy as np
-from numba import njit
 from numpy.typing import NDArray
 
 from ANN.activation_functions.activation import Activation
 from ANN.activation_functions.reLu import ReLu
-from ANN.correlate import corr2d_multi_in_out
+from ANN.correlate.correlate import corr2d_multi_in_out
+from ANN.correlate.pad import pad
 from ANN.errors.shapeError import ShapeError
 from ANN.layers.initializers import gorlot
 from ANN.layers.layer import Layer
@@ -27,13 +27,28 @@ class Conv2D(Layer):
         activation_function: Activation = ReLu(),
         padding: Optional[Literal["full", "valid", "same"]] = "full",
     ):
-        def initialize_weights(input_shape):
+        # verify valid setup
+        if step_size > kernel_shape:
+            raise ShapeError(
+                f"Step size larger than kernel size will result in omitted inputs. \
+                {step_size=}, {kernel_shape=}"
+            )
+
+        def initialize_weights(input_shape: Tuple[int, int, int]):
+            """Initialize the weights for the layer using provided input shape.
+
+            Args:
+                input_shape (Tuple[int, int, int]): Input shape (x_dim, y_dim, channels)
+            """
             self.input_shape = input_shape
             # Compute adjusted input shape
             self.inputs = pad(
-                np.zeros(input_shape), self.kernel_shape, self.step_size, self.padding
+                np.zeros((1,) + input_shape),
+                self.kernel_shape,
+                self.step_size,
+                self.padding,
             )
-            self.padded_shape = self.inputs.shape
+            self.padded_shape = self.inputs.shape[1:]
 
             # Compute output shape
             self.output_shape = (
@@ -54,43 +69,75 @@ class Conv2D(Layer):
 
             self.initialized = True
 
-        def forward(inputs: NDArray[np.float32]):
-            if len(inputs.shape) == 1:
+        def forward(inputs: NDArray[np.float32]) -> NDArray:
+            """Computes forward pass on the inputs provided.
+
+            Args:
+                inputs (NDArray[np.float32]): Inputs should have shape (n_samples, x_dim, y_dim, channels)
+
+            Raises:
+                ShapeError: If incorrectly shaped inputs are provided.
+
+            Returns:
+                NDArray[np.float32]: Outputs in shape (n_samples, x_dim, y_dim, feature maps)
+            """
+            if len(inputs.shape) != 4:
                 raise ShapeError(
-                    f"Convolutional layer expected input of at least 2 dimensions, \
+                    f"Convolutional layer expected input of shape (n_samples, x_dim, y_dim, channels), \
                     received {inputs.shape=} instead."
                 )
-            if len(inputs.shape) == 2:
-                inputs = inputs.reshape(*inputs.shape, 1)
 
             # If first time seeing input shape, initiaze layer.
             if self.initialized is False:
-                initialize_weights(inputs.shape)
+                initialize_weights(inputs.shape[1:])
 
+            # Set input values for access by backward())
             self.inputs = pad(inputs, self.kernel_shape, self.step_size, self.padding)
 
+            # Set z value for access by backward()
             self.lin_comb = (
                 corr2d_multi_in_out(self.inputs, self.weights, self.step_size)
                 + self.bias
             )
-
+            # Set activations for use by backward()
             self.outputs = self.activation_function.forward(self.lin_comb)
 
             return self.outputs
 
-        def backward(error: NDArray[np.float32]):
+        def backward(error: NDArray[np.float32]) -> NDArray[np.float32]:
+            """Compute backward pass using provided error term.
+
+            Args:
+                error (NDArray[np.float32]): Error should match self.outputs shape.
+
+            Returns:
+                NDArray[np.float32]: Returns loss gradient with regards to inputs for backward
+                propagation.
+            """
+
             def dilate(
                 array: NDArray[np.float32], step_size: Tuple[int, int]
             ) -> NDArray[np.float32]:
+                """Dilate array using provided step size
+
+                Args:
+                    array (NDArray[np.float32]): Array to dilate, expects (n_samples, x_dim, y_dim,...)
+                    step_size (Tuple[int, int]): Step size used in forward convolution
+                    to decide the appropriate dilation size.
+
+                Returns:
+                    NDArray[np.float32]: Dilated Array
+                """
                 output = np.zeros(
                     (
-                        array.shape[0] + (step_size[0] - 1) * (array.shape[0] - 1),
-                        array.shape[1] + (step_size[1] - 1) * (array.shape[1] - 1),
-                        array.shape[2],
+                        array.shape[0],
+                        array.shape[1] + (step_size[0] - 1) * (array.shape[1] - 1),
+                        array.shape[2] + (step_size[1] - 1) * (array.shape[2] - 1),
+                        *array.shape[3:],
                     )
                 )
 
-                output[:: step_size[0], :: step_size[1]] = array
+                output[:, :: step_size[0], :: step_size[1]] = array
 
                 return output
 
@@ -98,7 +145,7 @@ class Conv2D(Layer):
             d_activation = self.activation_function.backward(self.lin_comb) * error
 
             # Get bias gradient
-            self.d_bias += np.sum(d_activation * self.outputs, axis=(0, 1))
+            self.d_bias += np.sum(d_activation * self.outputs, axis=(0, 1, 2))
 
             # Dilate Error
             if self.step_size != (1, 1):
@@ -107,29 +154,29 @@ class Conv2D(Layer):
             # Rotate Kernel
             rot_weights = np.rot90(self.weights, 2, (1, 2))
 
-            for c in range(self.d_weights.shape[-1]):
-                self.d_weights[..., c] += np.swapaxes(
+            for channel in range(self.d_weights.shape[-1]):
+                self.d_weights[..., channel] += np.swapaxes(
                     corr2d_multi_in_out(
-                        self.inputs[:, :, c, np.newaxis],
-                        np.swapaxes(d_activation, 2, 0)[..., np.newaxis],
+                        np.swapaxes(self.inputs, 3, 0)[np.newaxis, channel],
+                        np.swapaxes(d_activation, 3, 0),
                         (1, 1),
                     ),
-                    2,
+                    3,
                     0,
-                )
+                )[..., 0]
 
             if self.step_size != (1, 1):
                 pad_w = self.kernel_shape[0] - 1
                 pad_h = self.kernel_shape[1] - 1
                 d_activation = np.pad(
-                    d_activation, [[pad_w, pad_w], [pad_h, pad_h], [0, 0]], "constant"
+                    d_activation,
+                    [[0, 0], [pad_w, pad_w], [pad_h, pad_h], [0, 0]],
+                    "constant",
                 )
             else:
                 d_activation = pad(
                     d_activation, self.kernel_shape, self.step_size, "full"
                 )
-
-            input_gradient = np.zeros(self.padded_shape)
 
             input_gradient = corr2d_multi_in_out(
                 d_activation, np.swapaxes(rot_weights, 3, 0), (1, 1)
@@ -140,58 +187,12 @@ class Conv2D(Layer):
                     dif_w = self.input_shape[0] - self.padded_shape[0]
                     dif_h = self.input_shape[1] - self.padded_shape[1]
                     input_gradient = np.pad(
-                        input_gradient, [[0, dif_w], [0, dif_h], [0, 0]], "constant"
+                        input_gradient,
+                        [[0, 0], [0, dif_w], [0, dif_h], [0, 0]],
+                        "constant",
                     )
 
             return input_gradient
-
-        def pad(
-            input_a: NDArray[np.float32],
-            shape_b: Tuple[int, ...],
-            step_size: Tuple[int, int],
-            padding: Literal["valid", "full", "same"],
-        ) -> NDArray[np.float32]:
-            """Pad array to match desired convolution procedure when convolved with kernel of specified shape
-
-            Args:
-                input_a (NDArray[np.float32]): Array to be padded
-                shape_b (Tuple[int,...]): Shape array will be convolved with
-                step_size (Tuple[int, int]): Step size to be used in convolution
-                padding ( Literal["valid", "full", "same"]): Padding strategy to employ
-
-            Returns:
-                NDArray[np.float32]: Padded array
-            """
-
-            def get_max_valid_idx(size_a, size_b, stride):
-                res = (size_a - size_b) % stride
-                return -res if res != 0 else size_a
-
-            def get_size(width, kernel_size, stride):
-                return np.ceil((stride * (width - 1) - width + kernel_size) / 2).astype(
-                    int
-                )
-
-            pad_size = (0, 0)
-            if padding == "same":
-                pad_size = (
-                    get_size(input_a.shape[0], shape_b[0], step_size[0]),
-                    get_size(input_a.shape[1], shape_b[1], step_size[1]),
-                )
-            elif padding == "full":
-                pad_size = (shape_b[0] - 1, shape_b[1] - 1)
-            elif padding == "valid":
-                return input_a[
-                    : get_max_valid_idx(input_a.shape[0], shape_b[0], step_size[0]),
-                    : get_max_valid_idx(input_a.shape[1], shape_b[1], step_size[1]),
-                    :,
-                ]
-            padded_input = np.pad(
-                input_a,
-                [[pad_size[0], pad_size[0]], [pad_size[1], pad_size[1]], [0, 0]],
-                "constant",
-            )
-            return padded_input
 
         # utility function for shorthand in the case of a square filter (3) -> (3,3)
         def unpack(tuple_or_int: Union[Tuple[int, int], int]) -> Tuple[int, int]:
@@ -229,16 +230,9 @@ class Conv2D(Layer):
         self.initialized = False
         self.lin_comb = None
 
-        # verify valid setup
-        if step_size > kernel_shape:
-            raise ShapeError(
-                f"Step size larger than kernel size will result in omitted inputs. \
-                {step_size=}, {kernel_shape=}"
-            )
-
         # pass input_shape through -> it can be None
         if input_shape is not None:
-            if input_shape[:-1] < kernel_shape:
+            if input_shape[1:-1] < kernel_shape:
                 raise ShapeError(
                     f"Input size is smaller than kernel size. {input_shape=}, {kernel_shape=}"
                 )

@@ -21,9 +21,6 @@ class Model:
         layers: list[Layer],
         optimizer: Optimizer,
         initialize_weights: Callable[[Union[int, Tuple[int, ...]]], None],
-        accumulate_gradients: Callable[
-            [NDArray[np.float32], NDArray[np.float32]], None
-        ],
     ):
         self.forward = forward
         self.backward = backward
@@ -31,7 +28,6 @@ class Model:
         self.layers = layers
         self.history = {"training_loss": {}, "validation_loss": {}}
         self.initialize_weights = initialize_weights
-        self.accumulate_gradients = accumulate_gradients
 
     def train(
         self,
