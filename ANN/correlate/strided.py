@@ -1,4 +1,5 @@
-"""Helper functions to compute efficient correlation without using for loops by exploiting numpy's stride_tricks."""
+"""Utility function for obtaining a strided view of an array for efficient kernel shaped access (e.g. correlation or maxpool 2d)
+    """
 
 from typing import Tuple
 
@@ -6,24 +7,6 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ANN.correlate.shape import get_shape
-
-
-def corr2d_multi_in_out(
-    input_a: NDArray[np.float32],
-    input_b: NDArray[np.float32],
-    step_size: Tuple[int, int],
-) -> NDArray[np.float32]:
-    """Computes 2D correlation when input has multiple input channels and multiple output channels are desired.
-
-    Args:
-        input_a (NDArray[np.float32]): Input to correlate.
-        input_b (NDArray[np.float32]): Input to correlate with.
-        step_size (Tuple[int,int]): Step size for correlation.
-
-    Returns:
-        NDArray[np.float32]: Correlation result.
-    """
-    return np.einsum("ijklmno,lmno->ijkl", get_strided_view(**locals()), input_b)
 
 
 def get_strided_view(
