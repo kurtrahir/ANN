@@ -32,30 +32,27 @@ class MaxPool2D(Layer):
             Returns:
                 NDArray[np.float32]: Max-Pooled array (n_sampled, x_dim, y_dim, n_channels)
             """
-            if not self.initialized:
-                self.initialize_weights(inputs.shape)
             # Store input shape and strides for backward pass
             self.input_shape = inputs.shape
             self.input_strides = inputs.strides
-            # Get strided view to calculate local maxima
+            # Get strided view to calculate local maxima, remove dimension used for multiple
+            # feature map correlation
             strided_inputs = get_strided_view(
                 inputs,
                 np.zeros((1, *self.kernel_size, inputs.shape[-1])),
                 self.step_size,
+            )[..., 0, :, :, :]
+            strided_data_reshaped = strided_inputs.reshape(
+                strided_inputs.shape[0],
+                strided_inputs.shape[1],
+                strided_inputs.shape[2],
+                -1,
+                strided_inputs.shape[-1],
             )
-            # Store strided shape and strides
-            self.strided_shape = strided_inputs.shape
-            self.strided_strides = strided_inputs.strides
-            # Set shape for obtaining argmax - flatten 2 pool dims as argmax uses 1 dimension
-            # Store shape for later setting
-            self.argmax_shape = (
-                strided_inputs.shape[:4] + (-1,) + (strided_inputs.shape[-1],)
-            )
-            strided_data_reshaped = strided_inputs.reshape(self.argmax_shape)
-            # Get idx of local max elements
-            self.idx = np.argmax(strided_data_reshaped, axis=4, keepdims=True)
+            # Obtain index
+            self.idx = np.argmax(strided_data_reshaped, axis=3)
             # Return pooled array
-            return np.max(strided_inputs, axis=(4, 5))
+            return np.max(strided_inputs, axis=(3, 4))
 
         def backward(error: NDArray[np.float32]) -> NDArray[np.float32]:
             """Compute backward pass on provided error array.
@@ -66,28 +63,33 @@ class MaxPool2D(Layer):
             Returns:
                 NDArray[np.float32]: Input gradients (n_sampled, x_dim, y_dim, n_channels)
             """
-            # Create an array with same dimensions as input,
-            # and create a view with the same shape and strides as when the idx was obtained
-            d_inputs = np.lib.stride_tricks.as_strided(
-                np.zeros(self.input_shape), self.argmax_shape, self.strided_strides
-            )
-            # Set elements that were propagated in otherwise 0 array
-            d_inputs[self.idx] = error
-            # Reset view to normal array.
-            return np.lib.stride_tricks.as_strided(
-                d_inputs, self.input_shape, self.input_strides
-            )
+            # Create an array with same dimensions as input
+            d_inputs = np.zeros(self.input_shape)
+            # Iterate over array and set gradients using index stored in self.idx
+            for s in range(error.shape[0]):
+                for x in range(error.shape[1]):
+                    xs = x * self.step_size[0]
+                    xe = xs + self.kernel_size[0]
+                    for y in range(error.shape[2]):
+                        ys = y * self.step_size[1]
+                        ye = ys + self.kernel_size[1]
+                        for z in range(error.shape[-1]):
+                            d_inputs[s, xs:xe, ys:ye, z][
+                                self.idx[s, x, y, z] // 2, self.idx[s, x, y, z] % 2
+                            ] = error[s, x, y, z]
+            # Return gradients
+            return d_inputs
 
-        def initialize_weights(input_shape: Tuple[int, int, int, int]) -> None:
+        def initialize_weights(input_shape: Tuple[int, int, int]) -> None:
             """Initialize layer
 
             Args:
-                input_shape (Tuple[int,int,int,int]): Input shape (expect n_sampled, x_dim, y_dim, n_channels)
+                input_shape (Tuple[int,int,int]): Input shape (expect x_dim, y_dim, n_channels)
             """
             self.input_shape = input_shape
-            self.output_shape = (input_shape[0],) + get_shape(
-                input_shape[1:], (1, *self.kernel_size, input_shape[-1]), self.step_size
-            )
+            self.output_shape = get_shape(
+                input_shape, (1, *self.kernel_size, input_shape[-1]), self.step_size
+            ) + (input_shape[-1],)
             self.initialized = True
 
         Layer.__init__(
