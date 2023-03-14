@@ -23,4 +23,8 @@ def corr2d_multi_in_out(
     Returns:
         NDArray[np.float32]: Correlation result.
     """
-    return np.einsum("ijklmno,lmno->ijkl", get_strided_view(**locals()), input_b)
+    return np.einsum(
+        "ijklmno,lmno->ijkl",
+        get_strided_view(input_a=input_a, input_b=input_b, step_size=step_size),
+        input_b,
+    )
