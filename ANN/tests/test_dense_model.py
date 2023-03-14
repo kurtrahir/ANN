@@ -3,7 +3,7 @@ import numpy as np
 import ANN
 
 
-def test_dense_model(model):
+def dense_model_test(model):
     rnd = np.random.default_rng()
 
     N_SAMPLES = 100
@@ -22,7 +22,7 @@ def test_dense_model(model):
     model.train(inputs, targets, epochs=10, batch_size=100)
 
     assert type(model.forward(inputs)) is np.ndarray
-    assert type(model.forward(inputs[0])) is np.ndarray
+    assert type(model.forward(inputs[0:1])) is np.ndarray
 
 
 def test_dense():
@@ -30,7 +30,7 @@ def test_dense():
         [ANN.Dense(n_neurons=10, activation=ANN.Sigmoid())],
         ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
     )
-    test_dense_model(model)
+    dense_model_test(model)
 
 
 def test_dense_deep():
@@ -43,4 +43,4 @@ def test_dense_deep():
         ],
         ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
     )
-    test_dense_model(model)
+    dense_model_test(model)

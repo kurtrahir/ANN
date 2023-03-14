@@ -3,7 +3,7 @@ import numpy as np
 import ANN
 
 
-def test_cnn_model(model):
+def cnn_model_test(model):
     rnd = np.random.default_rng()
 
     N_SAMPLES = 100
@@ -37,7 +37,7 @@ def test_cnn():
             ],
             ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
         )
-        test_cnn_model(model)
+        cnn_model_test(model)
 
 
 def test_cnn_deep():
@@ -55,7 +55,7 @@ def test_cnn_deep():
             ],
             ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
         )
-        test_cnn_model(model)
+        cnn_model_test(model)
 
 
 def test_cnn_deep_maxpool():
@@ -75,4 +75,4 @@ def test_cnn_deep_maxpool():
             ],
             ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
         )
-        test_cnn_model(model)
+        cnn_model_test(model)

@@ -41,7 +41,7 @@ class Dense(Layer):
                 input_shape[1], n_neurons, (input_shape[1] + 1) * n_neurons
             ).reshape(input_shape[1] + 1, n_neurons)
             # Create matrix for inputs with added bias term
-            self.inputs = np.ones((1, input_shape[1] + 1))
+            self.inputs = np.ones((input_shape[0], input_shape[1] + 1))
             # Create matrix for weights derivative
             self.d_weights = np.zeros(self.weights.shape)
             self.initialized = True
@@ -63,7 +63,7 @@ class Dense(Layer):
         self.initialized = False
 
         if input_shape is not None:
-            initialize_weights((1, input_shape))
+            initialize_weights((input_shape))
 
         def forward(inputs: NDArray[np.float32]) -> NDArray[np.float32]:
             """Compute forward pass
