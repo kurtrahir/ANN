@@ -5,7 +5,6 @@ from typing import Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from ANN.correlate.pad import pad
 from ANN.correlate.shape import get_shape
 from ANN.correlate.strided import get_strided_view
 from ANN.layers.layer import Layer
@@ -22,6 +21,9 @@ class MaxPool2D(Layer):
         self.idx = None
         self.initialized = False
         self.pad = None
+
+        self.strided_shape = None
+        self.strided_strides = None
 
         def forward(inputs: NDArray[np.float32]) -> NDArray[np.float32]:
             """Compute forward pass on provided inputs.
@@ -49,6 +51,8 @@ class MaxPool2D(Layer):
                 -1,
                 strided_inputs.shape[-1],
             )
+            self.strided_shape = strided_inputs.shape
+            self.strided_strides = strided_inputs.strides
             # Obtain index
             self.idx = np.argmax(strided_data_reshaped, axis=3)
             # Return pooled array
@@ -73,19 +77,17 @@ class MaxPool2D(Layer):
                 )
             )
             # Iterate over array and set gradients using index stored in self.idx
-            for s in range(error.shape[0]):
-                for x in range(error.shape[1]):
-                    # Calculate subregion
-                    xs = x * self.step_size[0]
-                    xe = xs + self.kernel_size[0]
-                    for y in range(error.shape[2]):
-                        ys = y * self.step_size[1]
-                        ye = ys + self.kernel_size[1]
-                        for z in range(error.shape[-1]):
-                            temp_idx = np.unravel_index(
-                                self.idx[s, x, y, z], self.kernel_size
-                            )
-                            d_inputs[s, xs:xe, ys:ye, z][temp_idx] = error[s, x, y, z]
+            d_inputs = np.lib.stride_tricks.as_strided(
+                d_inputs, self.strided_shape, self.strided_strides
+            )
+            s_idx = np.arange(d_inputs.shape[0])[:, None, None, None]
+            x_idx = np.arange(d_inputs.shape[1])[:, None, None]
+            y_idx = np.arange(d_inputs.shape[2])[:, None]
+            c_idx = np.arange(d_inputs.shape[5])
+            d_inputs[s_idx, x_idx, y_idx, self.idx // 2, self.idx % 2, c_idx] = error
+            d_inputs = np.lib.stride_tricks.as_strided(
+                d_inputs, self.inputs.shape, self.inputs.strides
+            )
             # Return gradients
             return d_inputs[:, : self.input_shape[1], : self.input_shape[2], :]
 
@@ -111,12 +113,12 @@ class MaxPool2D(Layer):
                 input_shape[0],
                 input_shape[1] + self.pad[0],
                 input_shape[2] + self.pad[1],
-                input_shape[2],
+                input_shape[3],
             )
             self.inputs = np.zeros(self.padded_shape)
             self.output_shape = get_shape(
                 self.padded_shape,
-                (1,) + self.kernel_size + (self.padded_shape[-1]),
+                (1,) + self.kernel_size + (self.padded_shape[-1],),
                 self.step_size,
             )
             self.initialized = True
