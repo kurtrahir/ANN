@@ -84,7 +84,14 @@ class MaxPool2D(Layer):
             x_idx = np.arange(d_inputs.shape[1])[:, None, None]
             y_idx = np.arange(d_inputs.shape[2])[:, None]
             c_idx = np.arange(d_inputs.shape[5])
-            d_inputs[s_idx, x_idx, y_idx, self.idx // 2, self.idx % 2, c_idx] = error
+            d_inputs[
+                s_idx,
+                x_idx,
+                y_idx,
+                self.idx // self.kernel_size[0],
+                self.idx % self.kernel_size[1],
+                c_idx,
+            ] = error
             d_inputs = np.lib.stride_tricks.as_strided(
                 d_inputs, self.inputs.shape, self.inputs.strides
             )
@@ -118,7 +125,7 @@ class MaxPool2D(Layer):
             self.inputs = np.zeros(self.padded_shape)
             self.output_shape = get_shape(
                 self.padded_shape,
-                (1,) + self.kernel_size + (self.padded_shape[-1],),
+                (self.padded_shape[-1],) + self.kernel_size + (self.padded_shape[-1],),
                 self.step_size,
             )
             self.initialized = True
