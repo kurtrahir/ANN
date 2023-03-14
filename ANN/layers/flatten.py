@@ -22,7 +22,10 @@ class Flatten(Layer):
 
         def initialize_layer(input_shape):
             self.input_shape = input_shape
-            self.output_shape = (1, reduce(operator.mul, input_shape, 1))
+            self.output_shape = (
+                input_shape[0],
+                reduce(operator.mul, input_shape[1:], 1),
+            )
 
         Layer.__init__(
             self,

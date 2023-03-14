@@ -31,6 +31,10 @@ class Dense(Layer):
 
         def initialize_weights(input_shape: Tuple[int, int]):
             # Store shape of input
+            if len(input_shape) < 2:
+                raise ShapeError(
+                    f"Expected input shape (n_samples, n_inputs). Got {input_shape=} instead."
+                )
             self.input_shape = input_shape
             # Initialize Weights according to given input shape
             self.weights = gorlot(

@@ -24,12 +24,9 @@ def get_strided_view(
     """
     return np.lib.stride_tricks.as_strided(
         x=input_a,
-        shape=(
-            (input_a.shape[0],)
-            + get_shape(input_a.shape[1:], input_b.shape, step_size=step_size)
-            + input_b.shape
-        ),
-        strides=get_strides(**locals()),
+        shape=get_shape(input_a.shape, input_b.shape, step_size=step_size)
+        + input_b.shape[1:],
+        strides=get_strides(input_a=input_a, input_b=input_b, step_size=step_size),
         writeable=False,
     )
 

@@ -5,6 +5,7 @@ from typing import Tuple
 import numpy as np
 from numpy.typing import NDArray
 
+from ANN.correlate.pad import pad
 from ANN.correlate.shape import get_shape
 from ANN.correlate.strided import get_strided_view
 from ANN.layers.layer import Layer
@@ -15,13 +16,12 @@ class MaxPool2D(Layer):
         self.kernel_size = kernel_size
         self.step_size = step_size
         self.input_shape = None
-        self.input_strides = None
+        self.inputs = None
+        self.padded_shape = None
         self.output_shape = None
-        self.strided_shape = None
-        self.strided_strides = None
-        self.argmax_shape = None
         self.idx = None
         self.initialized = False
+        self.pad = None
 
         def forward(inputs: NDArray[np.float32]) -> NDArray[np.float32]:
             """Compute forward pass on provided inputs.
@@ -32,9 +32,9 @@ class MaxPool2D(Layer):
             Returns:
                 NDArray[np.float32]: Max-Pooled array (n_sampled, x_dim, y_dim, n_channels)
             """
-            # Store input shape and strides for backward pass
-            self.input_shape = inputs.shape
-            self.input_strides = inputs.strides
+            if not self.initialized or self.input_shape != inputs.shape:
+                initialize_weights(inputs.shape)
+            self.inputs[:, : inputs.shape[1], : inputs.shape[2], :] = inputs
             # Get strided view to calculate local maxima, remove dimension used for multiple
             # feature map correlation
             strided_inputs = get_strided_view(
@@ -64,32 +64,61 @@ class MaxPool2D(Layer):
                 NDArray[np.float32]: Input gradients (n_sampled, x_dim, y_dim, n_channels)
             """
             # Create an array with same dimensions as input
-            d_inputs = np.zeros(self.input_shape)
+            d_inputs = np.zeros(
+                (
+                    error.shape[0],
+                    self.input_shape[1] + self.pad[0],
+                    self.input_shape[2] + self.pad[1],
+                    error.shape[3],
+                )
+            )
             # Iterate over array and set gradients using index stored in self.idx
             for s in range(error.shape[0]):
                 for x in range(error.shape[1]):
+                    # Calculate subregion
                     xs = x * self.step_size[0]
                     xe = xs + self.kernel_size[0]
                     for y in range(error.shape[2]):
                         ys = y * self.step_size[1]
                         ye = ys + self.kernel_size[1]
                         for z in range(error.shape[-1]):
-                            d_inputs[s, xs:xe, ys:ye, z][
-                                self.idx[s, x, y, z] // 2, self.idx[s, x, y, z] % 2
-                            ] = error[s, x, y, z]
+                            temp_idx = np.unravel_index(
+                                self.idx[s, x, y, z], self.kernel_size
+                            )
+                            d_inputs[s, xs:xe, ys:ye, z][temp_idx] = error[s, x, y, z]
             # Return gradients
-            return d_inputs
+            return d_inputs[:, : self.input_shape[1], : self.input_shape[2], :]
 
-        def initialize_weights(input_shape: Tuple[int, int, int]) -> None:
+        def initialize_weights(input_shape: Tuple[int, int, int, int]) -> None:
             """Initialize layer
 
             Args:
-                input_shape (Tuple[int,int,int]): Input shape (expect x_dim, y_dim, n_channels)
+                input_shape (Tuple[int,int,int]): Input shape, expect (n_samples, x_dim, y_dim, n_channels)
             """
             self.input_shape = input_shape
+
+            def calc_pad(x, k, s):
+                res = (x - k) % s
+                if res != 0:
+                    return k - res
+                return 0
+
+            self.pad = (
+                calc_pad(input_shape[1], self.kernel_size[0], self.step_size[0]),
+                calc_pad(input_shape[2], self.kernel_size[1], self.step_size[1]),
+            )
+            self.padded_shape = (
+                input_shape[0],
+                input_shape[1] + self.pad[0],
+                input_shape[2] + self.pad[1],
+                input_shape[2],
+            )
+            self.inputs = np.zeros(self.padded_shape)
             self.output_shape = get_shape(
-                input_shape, (1, *self.kernel_size, input_shape[-1]), self.step_size
-            ) + (input_shape[-1],)
+                self.padded_shape,
+                (1,) + self.kernel_size + (self.padded_shape[-1]),
+                self.step_size,
+            )
             self.initialized = True
 
         Layer.__init__(

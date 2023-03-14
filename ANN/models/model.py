@@ -44,14 +44,16 @@ class Model:
                 f"Mismatched number of samples in training inputs and targets: \
                 {train_x.shape[0]} != {train_y.shape[0]}"
             )
+        set_list = [(train_x, "training")]
         if not val_x is None and not val_y is None:
             if val_x.shape[0] != val_y.shape[0]:
                 raise ShapeError(
                     f"Mismatched number of samples in validation inputs and targets: \
                     {val_x.shape[0]} != {val_y.shape[0]}"
                 )
+            set_list.append((val_x, "validation"))
 
-        for input_x, set_name in ((train_x, "training"), (val_x, "validation")):
+        for input_x, set_name in set_list:
             if len(input_x.shape) < 2:
                 raise ShapeError(
                     f"Model expected {set_name} input vector of shape (n_samples, (input_shape))) \
@@ -64,7 +66,7 @@ class Model:
                 Smaller batch will occur."
             )
 
-        self.initialize_weights(train_x[0].shape)
+        self.initialize_weights(train_x[0:batch_size].shape)
 
         for _ in range(epochs):
             print(f"Epoch : {self.optimizer.epochs+1}")
@@ -87,6 +89,7 @@ class Model:
                 )
 
     def clear_gradients(self):
+        """Reset all gradients to 0"""
         for layer in self.layers:
             if layer.has_weights:
                 layer.d_weights = np.zeros(layer.d_weights.shape)

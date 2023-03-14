@@ -31,7 +31,7 @@ class Sequential(Model):
                 NDArray[np.float32]: Outputs
             """
             if self.initialized is False:
-                initialize_weights(inputs[0].shape)
+                initialize_weights(inputs.shape)
             processed_x = inputs
             for layer in self.layers:
                 processed_x = layer.forward(processed_x)

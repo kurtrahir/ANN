@@ -12,6 +12,7 @@ from ANN.activation_functions.activation import Activation
 from ANN.activation_functions.reLu import ReLu
 from ANN.correlate.correlate import corr2d_multi_in_out
 from ANN.correlate.pad import pad
+from ANN.correlate.shape import get_shape
 from ANN.errors.shapeError import ShapeError
 from ANN.layers.initializers import gorlot
 from ANN.layers.layer import Layer
@@ -34,39 +35,50 @@ class Conv2D(Layer):
                 {step_size=}, {kernel_shape=}"
             )
 
-        def initialize_weights(input_shape: Tuple[int, int, int]):
+        def initialize_weights(input_shape: Tuple[int, int, int, int]):
             """Initialize the weights for the layer using provided input shape.
 
             Args:
-                input_shape (Tuple[int, int, int]): Input shape (x_dim, y_dim, channels)
+                input_shape (Tuple[int, int, int, int]): Input shape (n_samples, x_dim, y_dim, channels)
             """
+            if len(input_shape) < 4:
+                raise ShapeError(
+                    f"Expected input shape (n_samples, x_dim, y_dim, channels). Got {input_shape=} instead."
+                )
+            if input_shape[0:1] < kernel_shape:
+                raise ShapeError(
+                    f"Input size is smaller than kernel size. {input_shape=}, {kernel_shape=}"
+                )
             self.input_shape = input_shape
             # Compute adjusted input shape
             self.inputs = pad(
-                np.zeros((1,) + input_shape),
+                np.zeros(input_shape),
                 self.kernel_shape,
                 self.step_size,
                 self.padding,
             )
-            self.padded_shape = self.inputs.shape[1:]
+            self.padded_shape = self.inputs.shape
 
             # Compute output shape
-            self.output_shape = (
-                *get_shape(self.padded_shape, self.kernel_shape, step_size),
-                n_filters,
+            self.output_shape = get_shape(
+                self.padded_shape,
+                (self.n_filters,) + self.kernel_shape + (self.input_shape[-1],),
+                step_size,
             )
-
-            self.outputs = np.zeros(self.output_shape)
-
             # Initialize weights and gradients
-            weights_shape = (n_filters, *self.kernel_shape, self.padded_shape[2])
-            n_inputs = reduce(operator.mul, self.padded_shape, 1)
+
+            # Find shape of weights
+            weights_shape = (n_filters, *self.kernel_shape, self.padded_shape[-1])
+            # Calculate number of inputs and outputs for gorlot initialization
+            n_inputs = reduce(operator.mul, self.padded_shape[1:], 1)
             n_outputs = reduce(operator.mul, weights_shape, 1)
+            # Initialize weights and weight gradients
             self.weights = gorlot(n_inputs, n_outputs, weights_shape)
             self.d_weights = np.zeros(weights_shape)
+            # Initialize bias and bias gradients.
             self.bias = gorlot(n_inputs, n_outputs, (n_filters,))
             self.d_bias = np.zeros(self.bias.shape)
-
+            # Set initialization marker
             self.initialized = True
 
         def forward(inputs: NDArray[np.float32]) -> NDArray:
@@ -89,7 +101,7 @@ class Conv2D(Layer):
 
             # If first time seeing input shape, initiaze layer.
             if self.initialized is False:
-                initialize_weights(inputs.shape[1:])
+                initialize_weights(inputs.shape)
 
             # Set input values for access by backward())
             self.inputs = pad(inputs, self.kernel_shape, self.step_size, self.padding)
@@ -184,14 +196,26 @@ class Conv2D(Layer):
 
             if self.padding == "valid":
                 if self.padded_shape < self.input_shape:
-                    dif_w = self.input_shape[0] - self.padded_shape[0]
-                    dif_h = self.input_shape[1] - self.padded_shape[1]
+                    dif_w = self.input_shape[1] - self.padded_shape[1]
+                    dif_h = self.input_shape[2] - self.padded_shape[2]
                     input_gradient = np.pad(
                         input_gradient,
                         [[0, 0], [0, dif_w], [0, dif_h], [0, 0]],
                         "constant",
                     )
-
+            elif self.padding == "full":
+                if self.padded_shape > self.input_shape:
+                    p_w = self.kernel_shape[0] - 1
+                    p_h = self.kernel_shape[1] - 1
+                    input_gradient = input_gradient[
+                        :,
+                        p_w : self.padded_shape[1] - p_w,
+                        p_h : self.padded_shape[2] - p_h,
+                    ]
+            elif padding == "same":
+                input_gradient = input_gradient[
+                    :, : self.input_shape[1], : self.input_shape[2], :
+                ]
             return input_gradient
 
         # utility function for shorthand in the case of a square filter (3) -> (3,3)
@@ -200,13 +224,6 @@ class Conv2D(Layer):
                 (tuple_or_int, tuple_or_int)
                 if isinstance(tuple_or_int, int)
                 else tuple_or_int
-            )
-
-        # Get shape that would result from convolving a with b using provided step size.
-        def get_shape(shape_a, shape_b, step_size):
-            return (
-                np.ceil((shape_a[0] - shape_b[0]) / step_size[0]).astype(int) + 1,
-                np.ceil((shape_a[1] - shape_b[1]) / step_size[1]).astype(int) + 1,
             )
 
         # n_filters, kernel shape, step size, padding and activation function
@@ -232,10 +249,6 @@ class Conv2D(Layer):
 
         # pass input_shape through -> it can be None
         if input_shape is not None:
-            if input_shape[1:-1] < kernel_shape:
-                raise ShapeError(
-                    f"Input size is smaller than kernel size. {input_shape=}, {kernel_shape=}"
-                )
             # If not none and valid shape, initialize layer
             initialize_weights(input_shape)
 
