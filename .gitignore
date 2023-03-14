@@ -5,3 +5,5 @@ ANN/loss_functions/__pycache__/
 .vscode
 __pycache__/
 notebook.ipynb
+test.py
+notes.md

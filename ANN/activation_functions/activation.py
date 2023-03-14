@@ -1,9 +1,9 @@
 """Object definition for neural net activation functions.
 """
 
+
 class Activation:
-    """Object definition for neural net activation functions.
-    """
+    """Object definition for neural net activation functions."""
 
     def __init__(self, forward, backward):
         """Initialize activation function

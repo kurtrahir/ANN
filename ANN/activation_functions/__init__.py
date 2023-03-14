@@ -1,4 +1,7 @@
 """Activation function submodule"""
-from .Activation import Activation
-from .ReLu import ReLu
-from .Linear import Linear
+from .activation import Activation
+from .leaky_ReLu import LeakyReLu
+from .linear import Linear
+from .reLu import ReLu
+from .sigmoid import Sigmoid
+from .tanh import TanH

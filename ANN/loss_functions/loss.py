@@ -1,9 +1,9 @@
-"""Neural Network layer object"""
+"""Generic object for loss functions
+"""
 
 
-class Layer:
-    """Neural Network Layer Object"""
-
+class Loss:
+    """Generic Loss Object"""
 
     def __init__(self, forward, backward):
         self.forward = forward
