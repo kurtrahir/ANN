@@ -1,6 +1,7 @@
 """Generic Model Interface"""
 import warnings
-from typing import Callable, Tuple, Union
+from abc import ABC, abstractmethod
+from typing import Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -11,23 +12,18 @@ from ANN.layers import Layer
 from ANN.optimizers.optimizer import Optimizer
 
 
-class Model:
+class Model(ABC):
     """Generic Model Interface"""
 
     def __init__(
         self,
-        forward: Callable[[NDArray[np.float32]], NDArray[np.float32]],
-        backward: Callable[[NDArray[np.float32], NDArray[np.float32], Optimizer], None],
         layers: list[Layer],
         optimizer: Optimizer,
-        initialize_weights: Callable[[Union[int, Tuple[int, ...]]], None],
     ):
-        self.forward = forward
-        self.backward = backward
         self.optimizer = optimizer
         self.layers = layers
         self.history = {"training_loss": {}, "validation_loss": {}}
-        self.initialize_weights = initialize_weights
+        self.initialized = False
 
     def train(
         self,
@@ -65,8 +61,8 @@ class Model:
                 "Number of samples not evenly divisible by batch size.\
                 Smaller batch will occur."
             )
-
-        self.initialize_weights(train_x[0:batch_size].shape)
+        if not self.initialized:
+            self.initialize_weights(train_x[0:batch_size].shape)
 
         for _ in range(epochs):
             print(f"Epoch : {self.optimizer.epochs+1}")
@@ -83,6 +79,7 @@ class Model:
                 validation_loss = self.optimizer.loss.forward(
                     self.forward(val_x), val_y
                 )
+                validation_loss = np.array(validation_loss).reshape(val_x.shape[0], -1)
                 self.history["validation_loss"][self.optimizer.epochs] = validation_loss
                 print(
                     f"Validation Loss : {np.mean(np.mean(validation_loss, axis = 1))}"
@@ -95,3 +92,31 @@ class Model:
                 layer.d_weights = np.zeros(layer.d_weights.shape)
             if layer.has_bias:
                 layer.d_bias = np.zeros(layer.d_bias.shape)
+
+    @abstractmethod
+    def forward(self, inputs: NDArray[np.float32]) -> NDArray[np.float32]:
+        """Forward pass of model
+
+        Args:
+            inputs (NDArray[np.float32]): inputs to compute
+        Returns:
+            NDArray[np.float32]: model output
+        """
+
+    @abstractmethod
+    def backward(self, inputs: NDArray[np.float32], targets: NDArray[np.float32]):
+        """Backward pass of model
+
+        Args:
+            inputs (NDArray[np.float32]): Inputs to pass through model
+            targets (NDArray[np.float32]): Targets for loss computation
+            optimizer (Optimizer): Optimizer object for weight update computation
+        """
+
+    @abstractmethod
+    def initialize_weights(self, input_shape: Tuple[int, ...]):
+        """Initialize weights of model for given input shape
+
+        Args:
+            input_shape (Tuple[int,...]): Shape of inputs.
+        """

@@ -13,4 +13,13 @@ class Linear(Activation):
     """
 
     def __init__(self):
-        Activation.__init__(self, lambda x: x, lambda x: np.invert(np.isclose(x, 0)))
+        self.output = None
+        Activation.__init__(self)
+
+    def forward(self, pre_activation):
+        self.activations = pre_activation
+        return pre_activation
+
+    def backward(self, partial_loss_derivative):
+        local_gradient = np.invert(np.isclose(self.activations, 0))
+        return local_gradient * partial_loss_derivative

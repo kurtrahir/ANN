@@ -12,7 +12,6 @@ def get_shape(
 ) -> Tuple[int, ...]:
     """Return output shape resulting from correlating a with b
 
-
     Args:
         shape_a (Tuple[int, ...]): Shape of array to be correlated (x_dim, y_dim, ...)
         shape_b (Tuple[int,...]): Shape of array to be correlated with (x_dim, y_dim,...) or (n_samples, x_dim, y_dim,...)
@@ -35,9 +34,15 @@ def get_shape(
     square_a = get_square(shape_a)
     square_b = get_square(shape_b)
 
+    def validate_stride(size_a, size_b, stride):
+        if (size_a - size_b) % stride != 0:
+            raise ShapeError("Invalid stride setting.")
+
+    validate_stride(square_a[0], square_b[0], step_size[0])
+    validate_stride(square_a[1], square_b[1], step_size[1])
     corr_square = (
-        np.ceil((square_a[0] - square_b[0]) / step_size[0]).astype(int) + 1,
-        np.ceil((square_a[1] - square_b[1]) / step_size[1]).astype(int) + 1,
+        np.floor((square_a[0] - square_b[0]) / step_size[0] + 1).astype(int),
+        np.floor((square_a[1] - square_b[1]) / step_size[1] + 1).astype(int),
     )
     # If multi-sample, multi-channel
     if len(shape_a) == 4 and len(shape_b) == 4:

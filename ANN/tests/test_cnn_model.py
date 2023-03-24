@@ -30,12 +30,16 @@ def test_cnn():
         model = ANN.Sequential(
             [
                 ANN.Conv2D(
-                    n_filters=2, kernel_shape=(2, 2), step_size=(2, 2), padding=padding
+                    n_filters=2,
+                    kernel_shape=(2, 2),
+                    step_size=(1, 1),
+                    padding=padding,
+                    activation_function=ANN.ReLu(),
                 ),
                 ANN.Flatten(),
-                ANN.Dense(n_neurons=10, activation=ANN.Sigmoid()),
+                ANN.Dense(n_neurons=10, activation=ANN.Linear()),
             ],
-            ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
+            ANN.SGD(loss=ANN.CategoricalCrossEntropy(), learning_rate=1e-3),
         )
         cnn_model_test(model)
 
@@ -45,15 +49,23 @@ def test_cnn_deep():
         model = ANN.Sequential(
             [
                 ANN.Conv2D(
-                    n_filters=2, kernel_shape=(2, 2), step_size=(2, 2), padding=padding
+                    n_filters=2,
+                    kernel_shape=(2, 2),
+                    step_size=(1, 1),
+                    padding=padding,
+                    activation_function=ANN.ReLu(),
                 ),
                 ANN.Conv2D(
-                    n_filters=2, kernel_shape=(2, 2), step_size=(2, 2), padding=padding
+                    n_filters=2,
+                    kernel_shape=(2, 2),
+                    step_size=(1, 1),
+                    padding=padding,
+                    activation_function=ANN.ReLu(),
                 ),
                 ANN.Flatten(),
-                ANN.Dense(n_neurons=10, activation=ANN.Sigmoid()),
+                ANN.Dense(n_neurons=10, activation=ANN.Linear()),
             ],
-            ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
+            ANN.SGD(loss=ANN.CategoricalCrossEntropy(), learning_rate=1e-3),
         )
         cnn_model_test(model)
 
@@ -63,16 +75,24 @@ def test_cnn_deep_maxpool():
         model = ANN.Sequential(
             [
                 ANN.Conv2D(
-                    n_filters=2, kernel_shape=(2, 2), step_size=(1, 1), padding=padding
+                    n_filters=2,
+                    kernel_shape=(2, 2),
+                    step_size=(1, 1),
+                    padding=padding,
+                    activation_function=ANN.ReLu(),
                 ),
                 ANN.MaxPool2D(kernel_size=(2, 2), step_size=(2, 2)),
                 ANN.Conv2D(
-                    n_filters=2, kernel_shape=(2, 2), step_size=(1, 1), padding=padding
+                    n_filters=2,
+                    kernel_shape=(2, 2),
+                    step_size=(1, 1),
+                    padding=padding,
+                    activation_function=ANN.ReLu(),
                 ),
                 ANN.MaxPool2D(kernel_size=(2, 2), step_size=(2, 2)),
                 ANN.Flatten(),
-                ANN.Dense(n_neurons=10, activation=ANN.Sigmoid()),
+                ANN.Dense(n_neurons=10, activation=ANN.Linear()),
             ],
-            ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
+            ANN.SGD(loss=ANN.CategoricalCrossEntropy(), learning_rate=1e-3),
         )
         cnn_model_test(model)
