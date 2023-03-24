@@ -9,7 +9,6 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ANN.activation_functions.activation import Activation
-from ANN.activation_functions.reLu import ReLu
 from ANN.correlate.correlate import corr2d_multi_in_out
 from ANN.correlate.dilate import dilate
 from ANN.correlate.pad import pad, unpad
