@@ -92,7 +92,7 @@ class Dense(Layer):
         d_activation = self.activation_function.backward(gradient)
         # Get derivative of loss with regards to weights and store in
         # gradient property
-        self.d_weights += np.sum(np.dot(self.inputs.T, d_activation), axis=0)
+        self.d_weights += np.dot(self.inputs.T, d_activation)
         # Get derivative of output with regards to inputs.
         return np.dot(d_activation, self.weights[:-1, :].T)
 
