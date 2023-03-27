@@ -23,7 +23,7 @@ def get_strided_view(
         NDArray[np.float32]: Strided view of input a.
     """
     return np.lib.stride_tricks.as_strided(
-        x=input_a,
+        x=np.asarray(input_a),
         shape=get_shape(input_a.shape, input_b.shape, step_size=step_size)
         + input_b.shape[1:],
         strides=get_strides(input_a=input_a, input_b=input_b, step_size=step_size),

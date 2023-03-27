@@ -166,9 +166,7 @@ class Conv2D(Layer):
         d_activation = self.activation_function.backward(gradient)
 
         # Get bias gradient
-        self.d_bias += np.sum(
-            d_activation * self.activation_function.activations, axis=(0, 1, 2)
-        )
+        self.d_bias += np.sum(d_activation, axis=(0, 1, 2))
 
         # Dilate activation gradient
         if self.step_size != (1, 1):
@@ -177,16 +175,8 @@ class Conv2D(Layer):
         # Rotate Kernel
         rot_weights = np.rot90(self.weights, 2, (1, 2))
 
-        for channel in range(self.d_weights.shape[-1]):
-            self.d_weights[..., channel] += np.swapaxes(
-                corr2d_multi_in_out(
-                    np.swapaxes(self.inputs, 3, 0)[np.newaxis, channel],
-                    np.swapaxes(d_activation, 3, 0),
-                    (1, 1),
-                ),
-                3,
-                0,
-            )[..., 0]
+        # for channel in range(self.d_weights.shape[-1]):
+        self.d_weights = corr2d_multi_in_out(self.inputs.T, d_activation.T, (1, 1)).T
 
         if self.step_size != (1, 1):
             pad_w = self.kernel_shape[0] - 1

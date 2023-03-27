@@ -78,7 +78,7 @@ class Model(ABC):
                 )
             self.optimizer.epochs += 1
             print(
-                f"Training Loss : {np.mean(np.mean(np.array(self.history['training_loss'][epoch]), axis = 1))}"
+                f"Training Loss : {np.mean(np.mean(np.array(self.history['training_loss'][epoch]), axis = 1)).get()}"
             )
             if not val_x is None and not val_y is None:
                 validation_loss = self.optimizer.loss.forward(
