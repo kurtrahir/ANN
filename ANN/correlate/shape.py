@@ -1,8 +1,7 @@
 """Utility function for calculating the output shape of strided correlation."""
 
+from math import floor
 from typing import Tuple
-
-import numpy as np
 
 from ANN.errors.shapeError import ShapeError
 
@@ -41,8 +40,8 @@ def get_shape(
     validate_stride(square_a[0], square_b[0], step_size[0])
     validate_stride(square_a[1], square_b[1], step_size[1])
     corr_square = (
-        np.floor((square_a[0] - square_b[0]) / step_size[0] + 1).astype(int),
-        np.floor((square_a[1] - square_b[1]) / step_size[1] + 1).astype(int),
+        floor((square_a[0] - square_b[0]) / step_size[0] + 1),
+        floor((square_a[1] - square_b[1]) / step_size[1] + 1),
     )
     # If multi-sample, multi-channel
     if len(shape_a) == 4 and len(shape_b) == 4:

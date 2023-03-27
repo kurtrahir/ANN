@@ -1,9 +1,10 @@
 """Generic Model Interface"""
 import warnings
 from abc import ABC, abstractmethod
+from random import shuffle as list_shuffle
 from typing import Tuple
 
-import numpy as np
+import cupy as np
 from numpy.typing import NDArray
 from tqdm import tqdm
 
@@ -33,6 +34,7 @@ class Model(ABC):
         batch_size: int,
         val_x: NDArray[np.float32] = None,
         val_y: NDArray[np.float32] = None,
+        shuffle: bool = True,
     ):
         """Method to train network on provided dataset."""
         if train_x.shape[0] != train_y.shape[0]:
@@ -64,17 +66,20 @@ class Model(ABC):
         if not self.initialized:
             self.initialize_weights(train_x[0:batch_size].shape)
 
-        for _ in range(epochs):
+        for epoch in range(self.optimizer.epochs, self.optimizer.epochs + epochs):
             print(f"Epoch : {self.optimizer.epochs+1}")
+            ids = list(range(0, train_x.shape[0]))
+            if shuffle:
+                list_shuffle(ids)
             for batch_idx in tqdm(range(0, train_x.shape[0], batch_size)):
                 self.backward(
-                    train_x[batch_idx : batch_idx + batch_size],
-                    train_y[batch_idx : batch_idx + batch_size],
+                    train_x[ids[batch_idx : batch_idx + batch_size]],
+                    train_y[ids[batch_idx : batch_idx + batch_size]],
                 )
             self.optimizer.epochs += 1
-            training_loss = self.optimizer.loss.forward(self.forward(train_x), train_y)
-            self.history["training_loss"][self.optimizer.epochs] = training_loss
-            print(f"Training Loss : {np.mean(np.mean(training_loss, axis = 1))}")
+            print(
+                f"Training Loss : {np.mean(np.mean(np.array(self.history['training_loss'][epoch]), axis = 1))}"
+            )
             if not val_x is None and not val_y is None:
                 validation_loss = self.optimizer.loss.forward(
                     self.forward(val_x), val_y

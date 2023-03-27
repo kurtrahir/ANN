@@ -1,6 +1,6 @@
 """MSE loss object implementation
 """
-import numpy as np
+import cupy as np
 
 from ANN.loss_functions import Loss
 

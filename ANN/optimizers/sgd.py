@@ -1,5 +1,5 @@
 """Stochastic Gradient Descent optimizer"""
-import numpy as np
+import cupy as np
 from numpy.typing import NDArray
 
 from ANN.loss_functions.loss import Loss
@@ -17,6 +17,14 @@ class SGD(Optimizer):
 
             outputs = model.forward(inputs)
             d_loss = self.loss.backward(outputs, targets)
+
+            if not self.epochs in model.history["training_loss"].keys():
+                model.history["training_loss"][self.epochs] = []
+
+            model.history["training_loss"][self.epochs].append(
+                self.loss.forward(outputs, targets)
+            )
+
             for layer in model.layers[::-1]:
                 d_loss = layer.backward(d_loss)
 

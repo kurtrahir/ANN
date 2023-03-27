@@ -1,6 +1,6 @@
 """Sigmoid activation function
 """
-import numpy as np
+import cupy as np
 from numpy.typing import NDArray
 
 from ANN.activation_functions import Activation

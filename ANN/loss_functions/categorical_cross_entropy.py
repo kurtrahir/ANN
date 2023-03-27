@@ -1,7 +1,7 @@
 """Categorical Cross Entropy Implementation"""
 
 
-import numpy as np
+import cupy as np
 
 from ANN.activation_functions.softmax import Softmax
 from ANN.loss_functions.loss import Loss

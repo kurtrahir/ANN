@@ -1,6 +1,6 @@
 """Binary Cross Entropy Loss Function"""
 
-import numpy as np
+import cupy as np
 
 from ANN.loss_functions.loss import Loss
 

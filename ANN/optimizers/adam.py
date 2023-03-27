@@ -1,6 +1,6 @@
 """Adam optimizer"""
 
-import numpy as np
+import cupy as np
 from numpy.typing import NDArray
 
 from ANN.loss_functions import Loss

@@ -3,7 +3,7 @@
 
 from typing import Tuple
 
-import numpy as np
+import cupy as np
 from numpy.typing import NDArray
 
 from ANN.correlate.shape import get_shape
@@ -27,7 +27,6 @@ def get_strided_view(
         shape=get_shape(input_a.shape, input_b.shape, step_size=step_size)
         + input_b.shape[1:],
         strides=get_strides(input_a=input_a, input_b=input_b, step_size=step_size),
-        writeable=False,
     )
 
 

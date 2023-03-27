@@ -2,7 +2,7 @@
 """
 from typing import Tuple
 
-import numpy as np
+import cupy as np
 from numpy.typing import NDArray
 
 
@@ -19,6 +19,5 @@ def gorlot(
     Returns:
         NDArray[np.float32]: randomly generated weight vector
     """
-    rnd = np.random.default_rng()
     value = np.sqrt(6) / np.sqrt(n_inputs + n_neurons)
-    return rnd.uniform(-value, value, weight_shape)
+    return np.random.uniform(-value, value, weight_shape)

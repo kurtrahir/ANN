@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from typing import Tuple
 
-import numpy as np
+import cupy as np
 from numpy.typing import NDArray
 
 

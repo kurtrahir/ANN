@@ -1,6 +1,6 @@
 """Linear unit implementation
 """
-import numpy as np
+import cupy as np
 
 from ANN.activation_functions import Activation
 
