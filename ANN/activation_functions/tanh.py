@@ -14,5 +14,5 @@ class TanH(Activation):
         return self.activations
 
     def backward(self, partial_loss_derivative):
-        local_gradient = 1 - self.activations**2
+        local_gradient = 1 - np.square(self.activations)
         return local_gradient * partial_loss_derivative

@@ -1,3 +1,4 @@
+import cupy as cp
 import numpy as np
 import tensorflow as tf
 
@@ -21,21 +22,21 @@ activation_pairs = [
 
 def test_forward():
     for ann_activation, tf_activation in activation_pairs:
-        test_inputs = rnd.standard_normal((1, 100))
-        ann_forward = ann_activation().forward(test_inputs)
+        test_inputs = rnd.standard_normal((10, 100))
+        ann_forward = ann_activation().forward(cp.array(test_inputs))
         tf_forward = tf_activation(tf.convert_to_tensor(test_inputs))
-        assert np.isclose(ann_forward, tf_forward).all()
+        assert np.allclose(ann_forward, tf_forward)
 
 
 def test_backward():
     for ann_activation, tf_activation in activation_pairs:
-        test_inputs = rnd.standard_normal((1, 100))
+        test_inputs = rnd.standard_normal((10, 100))
         activation = ann_activation()
-        _ = activation.forward(test_inputs)
-        ann_backward = activation.backward(np.ones((1, 100)))
+        _ = activation.forward(cp.array(test_inputs))
+        ann_backward = activation.backward(cp.ones((1, 100)))
         tensor_inputs = tf.convert_to_tensor(test_inputs)
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(tensor_inputs)
             tf_forward = tf_activation(tensor_inputs)
         tf_backward = tape.gradient(tf_forward, tensor_inputs).numpy()
-        assert np.isclose(tf_backward, ann_backward).all()
+        assert np.allclose(tf_backward, ann_backward)

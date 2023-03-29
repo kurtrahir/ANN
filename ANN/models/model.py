@@ -5,7 +5,7 @@ from random import shuffle as list_shuffle
 from typing import Tuple
 
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 from tqdm import tqdm
 
 from ANN.errors import ShapeError
@@ -94,9 +94,9 @@ class Model(ABC):
         """Reset all gradients to 0"""
         for layer in self.layers:
             if layer.has_weights:
-                layer.d_weights = np.zeros(layer.d_weights.shape)
+                layer.d_weights = np.zeros(layer.d_weights.shape, dtype=np.float32)
             if layer.has_bias:
-                layer.d_bias = np.zeros(layer.d_bias.shape)
+                layer.d_bias = np.zeros(layer.d_bias.shape, dtype=np.float32)
 
     @abstractmethod
     def forward(self, inputs: NDArray[np.float32]) -> NDArray[np.float32]:

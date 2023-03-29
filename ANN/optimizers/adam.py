@@ -1,7 +1,7 @@
 """Adam optimizer"""
 
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 
 from ANN.loss_functions import Loss
 from ANN.optimizers.optimizer import Optimizer
@@ -37,6 +37,13 @@ class Adam(Optimizer):
             # Accumulate gradients
             outputs = model.forward(inputs)
             d_loss = self.loss.backward(outputs, targets)
+
+            if not self.epochs in model.history["training_loss"].keys():
+                model.history["training_loss"][self.epochs] = []
+
+            model.history["training_loss"][self.epochs].append(
+                self.loss.forward(outputs, targets)
+            )
             for layer in model.layers[::-1]:
                 d_loss = layer.backward(d_loss)
             # Update weights by obtaining adam update term, averaging over batch

@@ -27,8 +27,8 @@ def dense_model_test(model):
 
 def test_dense():
     model = ANN.Sequential(
-        [ANN.Dense(n_neurons=10, activation=ANN.Sigmoid())],
-        ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
+        [ANN.Dense(n_neurons=10, activation=ANN.Softmax())],
+        ANN.SGD(loss=ANN.CrossEntropy(), learning_rate=1e-3),
     )
     dense_model_test(model)
 
@@ -39,8 +39,8 @@ def test_dense_deep():
             ANN.Dense(n_neurons=10, activation=ANN.ReLu()),
             ANN.Dense(n_neurons=10, activation=ANN.ReLu()),
             ANN.Dense(n_neurons=10, activation=ANN.ReLu()),
-            ANN.Dense(n_neurons=10, activation=ANN.Sigmoid()),
+            ANN.Dense(n_neurons=10, activation=ANN.Softmax()),
         ],
-        ANN.SGD(loss=ANN.BinaryCrossEntropy(), learning_rate=1e-3),
+        ANN.SGD(loss=ANN.CrossEntropy(), learning_rate=1e-3),
     )
     dense_model_test(model)

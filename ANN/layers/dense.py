@@ -3,7 +3,7 @@
 from typing import Optional, Tuple
 
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 
 from ANN.activation_functions.activation import Activation
 from ANN.activation_functions.reLu import ReLu
@@ -97,6 +97,8 @@ class Dense(Layer):
         return np.dot(d_activation, self.weights[:-1, :].T)
 
     def initialize(self, input_shape: Tuple[int, int]):
+        print("Initializing Dense Layer")
+
         # Store shape of input
         if len(input_shape) < 2:
             raise ShapeError(
@@ -104,11 +106,16 @@ class Dense(Layer):
             )
         self.input_shape = input_shape
         # Initialize Weights according to given input shape
-        self.weights = gorlot(
-            input_shape[1], self.n_neurons, (input_shape[1] + 1) * self.n_neurons
-        ).reshape(input_shape[1] + 1, self.n_neurons)
+        self.weights = np.concatenate(
+            (
+                gorlot(
+                    input_shape[1], self.n_neurons, (input_shape[1]) * self.n_neurons
+                ).reshape(input_shape[1], self.n_neurons),
+                np.zeros((1, self.n_neurons)),
+            )
+        )
         # Create matrix for inputs with added bias term
-        self.inputs = np.ones((input_shape[0], input_shape[1] + 1))
+        self.inputs = np.ones((input_shape[0], input_shape[1] + 1), dtype=np.float32)
         # Create matrix for weights derivative
-        self.d_weights = np.zeros(self.weights.shape)
+        self.d_weights = np.zeros(self.weights.shape, dtype=np.float32)
         self.initialized = True

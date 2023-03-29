@@ -4,7 +4,7 @@
 from typing import Tuple
 
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 
 from ANN.correlate.shape import get_shape
 

@@ -1,6 +1,6 @@
 """Stochastic Gradient Descent optimizer"""
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 
 from ANN.loss_functions.loss import Loss
 from ANN.optimizers import Optimizer
@@ -13,8 +13,6 @@ class SGD(Optimizer):
         self.learning_rate = learning_rate
 
         def backward(model, inputs: NDArray[np.float32], targets: NDArray[np.float32]):
-            n_samples = inputs.shape[0]
-
             outputs = model.forward(inputs)
             d_loss = self.loss.backward(outputs, targets)
 
@@ -31,9 +29,11 @@ class SGD(Optimizer):
             # Update weights, averaging over batch and multiplying with learning rate.
             for layer in model.layers:
                 if layer.has_weights:
-                    layer.weights -= self.learning_rate * layer.d_weights / n_samples
+                    layer.weights -= (
+                        self.learning_rate * layer.d_weights / inputs.shape[0]
+                    )
                 if layer.has_bias:
-                    layer.bias -= self.learning_rate * layer.d_bias / n_samples
+                    layer.bias -= self.learning_rate * layer.d_bias / inputs.shape[0]
 
             model.clear_gradients()
 

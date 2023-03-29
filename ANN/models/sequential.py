@@ -2,7 +2,7 @@
 """
 
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 
 from ANN.layers import Layer
 from ANN.models import Model

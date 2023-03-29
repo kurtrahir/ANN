@@ -6,7 +6,7 @@ from functools import reduce
 from typing import Literal, Optional, Tuple, Union
 
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 
 from ANN.activation_functions.activation import Activation
 from ANN.correlate.correlate import corr2d_multi_in_out

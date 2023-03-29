@@ -2,7 +2,7 @@
 """
 
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 
 from ANN.activation_functions import Activation
 from ANN.loss_functions import Loss

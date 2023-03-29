@@ -1,7 +1,7 @@
 from typing import Literal, Tuple
 
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 
 from ANN.errors import ShapeError
 
@@ -139,8 +139,8 @@ def unpad(
         pad_y = get_same_padding_shape(kernel_shape[1])
         return inputs[
             :,
-            pad_x[0] : min(inputs.shape[1] - pad_x[1], target_shape[1]),
-            pad_y[0] : min(inputs.shape[2] - pad_y[1], target_shape[2]),
+            pad_x[0] : inputs.shape[1] - pad_x[1],
+            pad_y[0] : inputs.shape[2] - pad_y[1],
             :,
         ]
 

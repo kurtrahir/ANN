@@ -3,7 +3,7 @@
 from typing import Literal, Tuple
 
 import cupy as np
-from numpy.typing import NDArray
+from cupy.typing import NDArray
 
 from ANN.correlate.pad import pad, unpad
 from ANN.correlate.shape import get_shape
