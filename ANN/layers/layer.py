@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from typing import Tuple
 
-import cupy as np
+import cupy as cp
 from cupy.typing import NDArray
 
 
@@ -27,25 +27,25 @@ class Layer:
         self.output_shape = output_shape
 
     @abstractmethod
-    def forward(self, inputs: NDArray[np.float32]) -> NDArray[np.float32]:
+    def forward(self, inputs: NDArray[cp.float32]) -> NDArray[cp.float32]:
         """Forward pass on provided inputs
 
         Args:
-            inputs (NDArray[np.float32]): Inputs
+            inputs (NDArray [cp.float32]): Inputs
 
         Returns:
-            NDArray[np.float32]: Layer activation
+            NDArray [cp.float32]: Layer activation
         """
 
     @abstractmethod
-    def backward(self, gradient: NDArray[np.float32]) -> NDArray[np.float32]:
+    def backward(self, gradient: NDArray[cp.float32]) -> NDArray[cp.float32]:
         """Backward pass using provided partial gradient
 
         Args:
-            gradient (NDArray[np.float32]): Partial gradient to backpropagate
+            gradient (NDArray [cp.float32]): Partial gradient to backpropagate
 
         Returns:
-            NDArray[np.float32]: Partial gradient with regards to inputs.
+            NDArray [cp.float32]: Partial gradient with regards to inputs.
         """
 
     @abstractmethod

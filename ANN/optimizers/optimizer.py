@@ -2,7 +2,7 @@
 """
 from typing import Callable
 
-import cupy as np
+import cupy as cp
 from cupy.typing import NDArray
 
 from ANN.loss_functions.loss import Loss
@@ -14,7 +14,7 @@ class Optimizer:
     def __init__(
         self,
         loss: Loss,
-        backward: Callable[[], NDArray[np.float32]],
+        backward: Callable[[], NDArray[cp.float32]],
     ):
         self.backward = backward
         self.loss = loss

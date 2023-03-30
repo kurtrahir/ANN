@@ -1,5 +1,5 @@
 import cupy as cp
-import numpy as np
+import numpy as cp
 import tensorflow as tf
 
 from ANN.activation_functions.linear import Linear
@@ -15,7 +15,7 @@ from ANN.loss_functions.mean_square_error import MSE
 from ANN.models.sequential import Sequential
 from ANN.optimizers.sgd import SGD
 
-rnd = np.random.default_rng()
+rnd = cp.random.default_rng()
 
 
 def test_dense_sgd():
@@ -34,7 +34,7 @@ def test_dense_sgd():
             N_FEATURES = 10
             LEARNING_RATE = 1
             test_inputs = rnd.standard_normal((N_SAMPLES, N_FEATURES))
-            test_labels = np.log(np.abs(np.sum(test_inputs, axis=-1, keepdims=True)))
+            test_labels = cp.log(cp.abs(cp.sum(test_inputs, axis=-1, keepdims=True)))
             optimizer = SGD(learning_rate=LEARNING_RATE, loss=ann_loss)
 
             ann_model = Sequential(
@@ -80,8 +80,8 @@ def test_dense_sgd():
                 zip(ann_model.layers, tf_model.layers)
             ):
                 tf_weights, tf_biases = tf_layer.get_weights()
-                assert np.allclose(ann_layer.weights, tf_weights)
-                assert np.allclose(ann_layer.bias, tf_biases)
+                assert cp.allclose(ann_layer.weights, tf_weights)
+                assert cp.allclose(ann_layer.bias, tf_biases)
 
             with tf.GradientTape(persistent=True) as tape:
                 tape.watch(test_tensor)
@@ -106,7 +106,7 @@ def test_dense_sgd():
             ):
                 tf_weights, tf_biases = tf_layer.get_weights()
                 # Assert update was significant
-                assert not np.allclose(weights[i], ann_layer.weights)
+                assert not cp.allclose(weights[i], ann_layer.weights)
                 # Assert error less than .1%
-                assert np.allclose(ann_layer.bias.get(), tf_biases)
-                assert np.allclose(ann_layer.weights.get(), tf_weights)
+                assert cp.allclose(ann_layer.bias.get(), tf_biases)
+                assert cp.allclose(ann_layer.weights.get(), tf_weights)

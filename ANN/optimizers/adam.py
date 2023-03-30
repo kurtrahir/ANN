@@ -1,6 +1,6 @@
 """Adam optimizer"""
 
-import cupy as np
+import cupy as cp
 from cupy.typing import NDArray
 
 from ANN.loss_functions import Loss
@@ -19,18 +19,18 @@ class Adam(Optimizer):
         self.learning_rate = learning_rate
         self.epsilon = epsilon
 
-        def backward(model, inputs: NDArray[np.float32], targets: NDArray[np.float32]):
+        def backward(model, inputs: NDArray[cp.float32], targets: NDArray[cp.float32]):
             if not self.momentums:
                 for i, layer in enumerate(model.layers):
                     if layer.has_weights:
                         self.momentums[i] = {
-                            "first_order": np.zeros((layer.weights.shape)),
-                            "second_order": np.zeros((layer.weights.shape)),
+                            "first_order": cp.zeros((layer.weights.shape)),
+                            "second_order": cp.zeros((layer.weights.shape)),
                         }
                     if layer.has_bias:
                         self.momentums[f"bias_{i}"] = {
-                            "first_order": np.zeros((layer.bias.shape)),
-                            "second_order": np.zeros((layer.bias.shape)),
+                            "first_order": cp.zeros((layer.bias.shape)),
+                            "second_order": cp.zeros((layer.bias.shape)),
                         }
 
             n_samples = inputs.shape[0]
@@ -74,4 +74,4 @@ class Adam(Optimizer):
         self.update_momentums(gradients, layer_idx)
         first_order = self.momentums[layer_idx]["first_order"] / (1 - self.beta_1)
         second_order = self.momentums[layer_idx]["second_order"] / (1 - self.beta_2)
-        return (first_order) / (np.sqrt(second_order) + self.epsilon)
+        return (first_order) / (cp.sqrt(second_order) + self.epsilon)

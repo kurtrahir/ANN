@@ -1,5 +1,5 @@
 import cupy as cp
-import numpy as np
+import numpy as cp
 import tensorflow as tf
 
 from ANN.activation_functions.leaky_ReLu import LeakyReLu
@@ -9,7 +9,7 @@ from ANN.activation_functions.sigmoid import Sigmoid
 from ANN.activation_functions.softmax import Softmax
 from ANN.activation_functions.tanh import TanH
 
-rnd = np.random.default_rng()
+rnd = cp.random.default_rng()
 
 activation_pairs = [
     (ReLu, tf.keras.activations.relu),
@@ -25,7 +25,7 @@ def test_forward():
         test_inputs = rnd.standard_normal((10, 100))
         ann_forward = ann_activation().forward(cp.array(test_inputs))
         tf_forward = tf_activation(tf.convert_to_tensor(test_inputs))
-        assert np.allclose(ann_forward, tf_forward)
+        assert cp.allclose(ann_forward, tf_forward)
 
 
 def test_backward():
@@ -39,4 +39,4 @@ def test_backward():
             tape.watch(tensor_inputs)
             tf_forward = tf_activation(tensor_inputs)
         tf_backward = tape.gradient(tf_forward, tensor_inputs).numpy()
-        assert np.allclose(tf_backward, ann_backward)
+        assert cp.allclose(tf_backward, ann_backward)

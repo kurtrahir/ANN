@@ -1,6 +1,6 @@
 """MSE loss object implementation
 """
-import cupy as np
+import cupy as cp
 
 from ANN.loss_functions import Loss
 
@@ -16,7 +16,7 @@ class MSE(Loss):
         Loss.__init__(self)
 
     def forward(self, pred, true):
-        return np.mean(np.square(np.subtract(pred, true)), axis=-1)
+        return cp.mean(cp.square(cp.subtract(pred, true)), axis=-1)
 
     def backward(self, pred, true):
         return 2 / pred.shape[-1] * (pred - true)

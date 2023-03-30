@@ -1,10 +1,10 @@
-import cupy as np
+import cupy as cp
 
 import ANN
 
 
 def cnn_model_test(model):
-    rnd = np.random.default_rng()
+    rnd = cp.random.default_rng()
 
     N_SAMPLES = 100
 
@@ -12,7 +12,7 @@ def cnn_model_test(model):
     targets = rnd.integers(0, 10, N_SAMPLES)
 
     def one_hot_encode(labels, n_labels):
-        new_labels = np.zeros((labels.shape[0], n_labels))
+        new_labels = cp.zeros((labels.shape[0], n_labels))
         for i in range(labels.shape[0]):
             new_labels[i, labels[i]] = 1
         return new_labels
@@ -21,8 +21,8 @@ def cnn_model_test(model):
 
     model.train(inputs, targets, epochs=10, batch_size=100)
 
-    assert isinstance(model.forward(inputs), np.ndarray)
-    assert isinstance(model.forward(inputs[0:1]), np.ndarray)
+    assert isinstance(model.forward(inputs), cp.ndarray)
+    assert isinstance(model.forward(inputs[0:1]), cp.ndarray)
 
 
 def test_cnn():

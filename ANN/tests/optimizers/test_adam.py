@@ -1,5 +1,5 @@
 import cupy as cp
-import numpy as np
+import numpy as cp
 import tensorflow as tf
 
 from ANN.activation_functions.linear import Linear
@@ -16,7 +16,7 @@ from ANN.models.sequential import Sequential
 from ANN.optimizers.adam import Adam
 from ANN.optimizers.sgd import SGD
 
-rnd = np.random.default_rng()
+rnd = cp.random.default_rng()
 
 
 def test_dense_adam():
@@ -38,7 +38,7 @@ def test_dense_adam():
             BETA_2 = 0.5
             EPSILON = 1e-7
             test_inputs = rnd.standard_normal((N_SAMPLES, N_FEATURES))
-            test_labels = np.log(np.abs(np.sum(test_inputs, axis=-1, keepdims=True)))
+            test_labels = cp.log(cp.abs(cp.sum(test_inputs, axis=-1, keepdims=True)))
             optimizer = Adam(
                 learning_rate=LEARNING_RATE,
                 beta_1=BETA_1,
@@ -96,8 +96,8 @@ def test_dense_adam():
                 zip(ann_model.layers, tf_model.layers)
             ):
                 tf_weights, tf_biases = tf_layer.get_weights()
-                assert np.allclose(ann_layer.weights, tf_weights, rtol=1e-6, atol=1e-6)
-                assert np.allclose(ann_layer.bias, tf_biases, rtol=1e-4, atol=1e-4)
+                assert cp.allclose(ann_layer.weights, tf_weights, rtol=1e-6, atol=1e-6)
+                assert cp.allclose(ann_layer.bias, tf_biases, rtol=1e-4, atol=1e-4)
 
             with tf.GradientTape(persistent=True) as tape:
                 tape.watch(test_tensor)
@@ -122,13 +122,13 @@ def test_dense_adam():
             ):
                 print(i)
                 tf_weights, tf_biases = tf_layer.get_weights()
-                assert not np.allclose(weights[i], ann_layer.weights)
+                assert not cp.allclose(weights[i], ann_layer.weights)
                 # Assert error less than .1%
                 assert (
-                    (ann_layer.weights.get() - tf_weights) / np.linalg.norm(tf_weights)
+                    (ann_layer.weights.get() - tf_weights) / cp.linalg.norm(tf_weights)
                     < 0.001
                 ).all()
                 assert (
-                    (ann_layer.bias.get() - tf_biases) / np.linalg.norm(tf_biases)
+                    (ann_layer.bias.get() - tf_biases) / cp.linalg.norm(tf_biases)
                     < 0.001
                 ).all()

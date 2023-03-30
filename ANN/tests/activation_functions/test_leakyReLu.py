@@ -1,17 +1,17 @@
 import cupy as cp
-import numpy as np
+import numpy as cp
 import tensorflow as tf
 
 from ANN.activation_functions.leaky_ReLu import LeakyReLu
 
-rnd = np.random.default_rng()
+rnd = cp.random.default_rng()
 
 
 def test_forward():
     test_inputs = rnd.standard_normal((1, 100))
     ann_forward = LeakyReLu(0.3).forward(cp.array(test_inputs))
     tf_forward = tf.keras.layers.LeakyReLU(0.3)(tf.convert_to_tensor(test_inputs))
-    assert np.isclose(ann_forward, tf_forward).all()
+    assert cp.isclose(ann_forward, tf_forward).all()
 
 
 def test_backward():
@@ -24,4 +24,4 @@ def test_backward():
         tape.watch(tensor_inputs)
         tf_forward = tf.keras.layers.LeakyReLU(0.3)(tensor_inputs)
     tf_backward = tape.gradient(tf_forward, tensor_inputs).numpy()
-    assert np.isclose(tf_backward, ann_backward).all()
+    assert cp.isclose(tf_backward, ann_backward).all()

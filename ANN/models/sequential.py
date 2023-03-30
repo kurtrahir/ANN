@@ -1,7 +1,7 @@
 """Network implementation
 """
 
-import cupy as np
+import cupy as cp
 from cupy.typing import NDArray
 
 from ANN.layers import Layer
@@ -19,14 +19,14 @@ class Sequential(Model):
             optimizer=optimizer,
         )
 
-    def forward(self, inputs: NDArray[np.float32]) -> NDArray[np.float32]:
+    def forward(self, inputs: NDArray[cp.float32]) -> NDArray[cp.float32]:
         """Computes forward pass on the network
 
         Args:
-            inputs (NDArray[np.float32]): Inputs to process. Expect shape (n_samples, *input_shape,)
+            inputs (NDArray [cp.float32]): Inputs to process. Expect shape (n_samples, *input_shape,)
 
         Returns:
-            NDArray[np.float32]: Outputs
+            NDArray [cp.float32]: Outputs
         """
         if self.initialized is False:
             self.initialize_weights(inputs.shape)
@@ -35,7 +35,7 @@ class Sequential(Model):
             processed_x = layer.forward(processed_x)
         return processed_x
 
-    def backward(self, inputs: NDArray[np.float32], targets: NDArray[np.float32]):
+    def backward(self, inputs: NDArray[cp.float32], targets: NDArray[cp.float32]):
         """Computes backward pass on the network"""
         # Hand off backward pass to optimizer
         self.optimizer.backward(self, inputs, targets)

@@ -5,7 +5,8 @@ import operator
 from functools import reduce
 from typing import Literal, Optional, Tuple, Union
 
-import cupy as np
+import cupy as cp
+import numpy as np
 from cupy.typing import NDArray
 
 from ANN.activation_functions.activation import Activation
@@ -58,10 +59,10 @@ class Conv2D(Layer):
         n_outputs = reduce(operator.mul, weights_shape, 1)
         # Initialize weights and weight gradients
         self.weights = gorlot(n_inputs, n_outputs, weights_shape)
-        self.d_weights = np.zeros(weights_shape)
+        self.d_weights = cp.zeros(weights_shape)
         # Initialize bias and bias gradients.
         self.bias = gorlot(n_inputs, n_outputs, (self.n_filters,))
-        self.d_bias = np.zeros(self.bias.shape)
+        self.d_bias = cp.zeros(self.bias.shape)
         # Set initialization marker
         self.initialized = True
 
@@ -73,8 +74,8 @@ class Conv2D(Layer):
         step_size: Union[int, Tuple[int, int]] = (1, 1),
         input_shape: Optional[Tuple[int, int, int]] = None,
         padding: Optional[Literal["full", "valid", "same"]] = "full",
-        l1: Optional[np.float32] = None,
-        l2: Optional[np.float32] = None,
+        l1: Optional[cp.float32] = None,
+        l2: Optional[cp.float32] = None,
     ):
         # verify valid setup
         if step_size > kernel_shape:
@@ -110,6 +111,9 @@ class Conv2D(Layer):
         self.d_bias = None
         self.initialized = False
 
+        self.l1 = l1
+        self.l2 = l2
+
         # pass input_shape through -> it can be None
         if input_shape is not None:
             # If not none and valid shape, initialize layer
@@ -124,17 +128,17 @@ class Conv2D(Layer):
             output_shape=self.output_shape,
         )
 
-    def forward(self, inputs: NDArray[np.float32]) -> NDArray:
+    def forward(self, inputs: NDArray[cp.float32]) -> NDArray:
         """Computes forward pass on the inputs provided.
 
         Args:
-            inputs (NDArray[np.float32]): Inputs should have shape (n_samples, x_dim, y_dim, channels)
+            inputs (NDArray [cp.float32]): Inputs should have shape (n_samples, x_dim, y_dim, channels)
 
         Raises:
             ShapeError: If incorrectly shaped inputs are provided.
 
         Returns:
-            NDArray[np.float32]: Outputs in shape (n_samples, x_dim, y_dim, feature maps)
+            NDArray [cp.float32]: Outputs in shape (n_samples, x_dim, y_dim, feature maps)
         """
         if len(inputs.shape) != 4:
             raise ShapeError(
@@ -154,31 +158,37 @@ class Conv2D(Layer):
             corr2d_multi_in_out(self.inputs, self.weights, self.step_size) + self.bias
         )
 
-    def backward(self, gradient: NDArray[np.float32]) -> NDArray[np.float32]:
+    def backward(self, gradient: NDArray[cp.float32]) -> NDArray[cp.float32]:
         """Compute backward pass using provided error term.
 
         Args:
-            error (NDArray[np.float32]): Error should match self.outputs shape.
+            error (NDArray [cp.float32]): Error should match self.outputs shape.
 
         Returns:
-            NDArray[np.float32]: Returns loss gradient with regards to inputs for backward
+            NDArray [cp.float32]: Returns loss gradient with regards to inputs for backward
             propagation.
         """
         # Get activation function gradient
-        d_activation = self.activation_function.backward(gradient)
+        self.activation_function.activations = self.activation_function.backward(
+            gradient
+        )
 
         # Get bias gradient
-        self.d_bias = np.sum(d_activation, axis=(0, 1, 2))
+        self.d_bias = cp.sum(self.activation_function.activations, axis=(0, 1, 2))
 
         # Dilate activation gradient
         if self.step_size != (1, 1):
-            d_activation = dilate(d_activation, self.step_size)
+            self.activation_function.activations = dilate(
+                self.activation_function.activations, self.step_size
+            )
 
         # Rotate Kernel
-        rot_weights = np.rot90(self.weights, 2, (1, 2))
+        rot_weights = cp.rot90(self.weights, 2, (1, 2))
 
         # for channel in range(self.d_weights.shape[-1]):
-        self.d_weights = corr2d_multi_in_out(self.inputs.T, d_activation.T, (1, 1)).T
+        self.d_weights = corr2d_multi_in_out(
+            self.inputs.T, self.activation_function.activations.T, (1, 1)
+        ).T
 
         if self.l1 is not None:
             self.d_weights[self.weights > 0] += self.l1
@@ -190,16 +200,21 @@ class Conv2D(Layer):
         if self.step_size != (1, 1):
             pad_w = self.kernel_shape[0] - 1
             pad_h = self.kernel_shape[1] - 1
-            d_activation = np.pad(
+            d_activation = cp.pad(
                 d_activation,
                 [[0, 0], [pad_w, pad_w], [pad_h, pad_h], [0, 0]],
                 "constant",
             )
         else:
-            d_activation = pad(d_activation, self.kernel_shape, self.step_size, "full")
+            self.activation_function.activations = pad(
+                self.activation_function.activations,
+                self.kernel_shape,
+                self.step_size,
+                "full",
+            )
 
         input_gradient = corr2d_multi_in_out(
-            d_activation, np.swapaxes(rot_weights, 3, 0), (1, 1)
+            self.activation_function.activations, cp.swapaxes(rot_weights, 3, 0), (1, 1)
         )
 
         return unpad(input_gradient, self.kernel_shape, self.input_shape, self.padding)

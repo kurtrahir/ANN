@@ -1,5 +1,5 @@
 import cupy as cp
-import numpy as np
+import numpy as cp
 import tensorflow as tf
 
 from ANN.activation_functions.linear import Linear
@@ -8,7 +8,7 @@ from ANN.activation_functions.sigmoid import Sigmoid
 from ANN.activation_functions.tanh import TanH
 from ANN.layers.convolutional import Conv2D
 
-rnd = np.random.default_rng()
+rnd = cp.random.default_rng()
 
 
 def test_forward():
@@ -21,7 +21,7 @@ def test_forward():
             input_shape=test_inputs.shape,
             padding=padding,
         )
-        weights = np.moveaxis(cp.asnumpy(ann_layer.weights), 0, 3)
+        weights = cp.moveaxis(cp.asnumpy(ann_layer.weights), 0, 3)
         bias = cp.asnumpy(ann_layer.bias)
 
         tf_layer = tf.keras.layers.Conv2D(
@@ -31,7 +31,7 @@ def test_forward():
         tf_layer.set_weights(weights=[weights, bias])
         tf_forward = tf_layer(tf.convert_to_tensor(test_inputs))
         ann_forward = ann_layer.forward(cp.array(test_inputs))
-        assert np.allclose(tf_forward.numpy(), ann_forward, rtol=1e-6, atol=1e-6)
+        assert cp.allclose(tf_forward.numpy(), ann_forward, rtol=1e-6, atol=1e-6)
 
 
 def test_backward():
@@ -51,7 +51,7 @@ def test_backward():
                 input_shape=test_inputs.shape,
                 padding=padding,
             )
-            weights = np.moveaxis(cp.asnumpy(ann_layer.weights), 0, 3)
+            weights = cp.moveaxis(cp.asnumpy(ann_layer.weights), 0, 3)
             bias = cp.asnumpy(ann_layer.bias)
 
             tf_layer = tf.keras.layers.Conv2D(
@@ -72,16 +72,16 @@ def test_backward():
             ann_backward = ann_layer.backward(cp.ones((1, 1, 1, 1)))
 
             assert ann_forward.shape == tf_forward.shape
-            assert np.allclose(
+            assert cp.allclose(
                 cp.asnumpy(ann_forward), tf_forward.numpy(), rtol=1e-5, atol=1e-5
             )
-            assert np.allclose(tf_x_grad, ann_backward, rtol=1e-5, atol=1e-5)
+            assert cp.allclose(tf_x_grad, ann_backward, rtol=1e-5, atol=1e-5)
             temp_ann_weights = cp.moveaxis(ann_layer.d_weights, 0, 3)
-            print(np.max(tf_w_grad[0] - cp.asnumpy(cp.around(temp_ann_weights, 5))))
-            assert np.allclose(
+            print(cp.max(tf_w_grad[0] - cp.asnumpy(cp.around(temp_ann_weights, 5))))
+            assert cp.allclose(
                 tf_w_grad[0],
                 cp.moveaxis(ann_layer.d_weights, 0, 3),
                 rtol=1e-4,
                 atol=1e-4,
             )
-            assert np.allclose(tf_w_grad[1], ann_layer.d_bias, rtol=1e-6, atol=1e-6)
+            assert cp.allclose(tf_w_grad[1], ann_layer.d_bias, rtol=1e-6, atol=1e-6)

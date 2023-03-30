@@ -1,23 +1,23 @@
 from typing import Tuple
 
-import cupy as np
+import cupy as cp
 from cupy.typing import NDArray
 
 
 def dilate(
-    array: NDArray[np.float32], step_size: Tuple[int, int]
-) -> NDArray[np.float32]:
+    array: NDArray[cp.float32], step_size: Tuple[int, int]
+) -> NDArray[cp.float32]:
     """Dilate array using provided step size
 
     Args:
-        array (NDArray[np.float32]): Array to dilate, expects (n_samples, x_dim, y_dim,...)
+        array (NDArray [cp.float32]): Array to dilate, expects (n_samples, x_dim, y_dim,...)
         step_size (Tuple[int, int]): Step size used in forward convolution
         to decide the appropriate dilation size.
 
     Returns:
-        NDArray[np.float32]: Dilated Array
+        NDArray [cp.float32]: Dilated Array
     """
-    output = np.zeros(
+    output = cp.zeros(
         (
             array.shape[0],
             array.shape[1] + (step_size[0] - 1) * (array.shape[1] - 1),

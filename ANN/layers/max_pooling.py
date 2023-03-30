@@ -2,7 +2,7 @@
 
 from typing import Literal, Tuple
 
-import cupy as np
+import cupy as cp
 from cupy.typing import NDArray
 
 from ANN.correlate.pad import pad, unpad
@@ -41,14 +41,14 @@ class MaxPool2D(Layer):
             weights=None,
         )
 
-    def forward(self, inputs: NDArray[np.float32]) -> NDArray[np.float32]:
+    def forward(self, inputs: NDArray[cp.float32]) -> NDArray[cp.float32]:
         """Compute forward pass on provided inputs.
 
         Args:
-            inputs (NDArray[np.float32]): Input array to reduce, expect (n_sampled, x_dim, y_dim, n_channels)
+            inputs (NDArray [cp.float32]): Input array to reduce, expect (n_sampled, x_dim, y_dim, n_channels)
 
         Returns:
-            NDArray[np.float32]: Max-Pooled array (n_sampled, x_dim, y_dim, n_channels)
+            NDArray [cp.float32]: Max-Pooled array (n_sampled, x_dim, y_dim, n_channels)
         """
         if not self.initialized or self.input_shape != inputs.shape:
             self.initialize(inputs.shape)
@@ -58,7 +58,7 @@ class MaxPool2D(Layer):
         # feature map correlation
         strided_inputs = get_strided_view(
             self.inputs,
-            np.zeros((1, *self.kernel_size, inputs.shape[-1])),
+            cp.zeros((1, *self.kernel_size, inputs.shape[-1])),
             self.step_size,
         )[..., 0, :, :, :]
 
@@ -72,29 +72,29 @@ class MaxPool2D(Layer):
         self.strided_shape = strided_inputs.shape
         self.strided_strides = strided_inputs.strides
         # Obtain index
-        self.idx = np.argmax(strided_data_reshaped, axis=3)
+        self.idx = cp.argmax(strided_data_reshaped, axis=3)
         # Return pooled array
-        return np.max(strided_inputs, axis=(3, 4))
+        return cp.max(strided_inputs, axis=(3, 4))
 
-    def backward(self, gradient: NDArray[np.float32]) -> NDArray[np.float32]:
+    def backward(self, gradient: NDArray[cp.float32]) -> NDArray[cp.float32]:
         """Compute backward pass on provided error array.
 
         Args:
-            gradient (NDArray[np.float32]): Error array (expect (n_sampled, x_dim, y_dim, n_channels))
+            gradient (NDArray [cp.float32]): Error array (expect (n_sampled, x_dim, y_dim, n_channels))
 
         Returns:
-            NDArray[np.float32]: Input gradients (n_sampled, x_dim, y_dim, n_channels)
+            NDArray [cp.float32]: Input gradients (n_sampled, x_dim, y_dim, n_channels)
         """
         # Create an array with same dimensions as input
-        d_inputs = np.zeros(self.padded_shape)
+        d_inputs = cp.zeros(self.padded_shape)
 
-        d_inputs = np.lib.stride_tricks.as_strided(
+        d_inputs = cp.lib.stride_tricks.as_strided(
             d_inputs, self.strided_shape, self.strided_strides
         )
-        s_idx = np.arange(d_inputs.shape[0])[:, None, None, None]
-        x_idx = np.arange(d_inputs.shape[1])[:, None, None]
-        y_idx = np.arange(d_inputs.shape[2])[:, None]
-        c_idx = np.arange(d_inputs.shape[5])
+        s_idx = cp.arange(d_inputs.shape[0])[:, None, None, None]
+        x_idx = cp.arange(d_inputs.shape[1])[:, None, None]
+        y_idx = cp.arange(d_inputs.shape[2])[:, None]
+        c_idx = cp.arange(d_inputs.shape[5])
         d_inputs[
             s_idx,
             x_idx,
@@ -103,7 +103,7 @@ class MaxPool2D(Layer):
             self.idx % self.kernel_size[1],
             c_idx,
         ] = gradient
-        d_inputs = np.lib.stride_tricks.as_strided(
+        d_inputs = cp.lib.stride_tricks.as_strided(
             d_inputs, self.inputs.shape, self.inputs.strides
         )
         # Return gradients
@@ -118,7 +118,7 @@ class MaxPool2D(Layer):
         self.input_shape = input_shape
 
         self.padded_shape = pad(
-            np.zeros(input_shape), self.kernel_size, self.step_size, self.padding
+            cp.zeros(input_shape), self.kernel_size, self.step_size, self.padding
         ).shape
 
         self.output_shape = get_shape(

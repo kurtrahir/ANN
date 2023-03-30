@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from random import shuffle as list_shuffle
 from typing import Tuple
 
-import cupy as np
-from cupy.typing import NDArray
+import cupy as cp
+import numpy as np
 from tqdm import tqdm
 
 from ANN.errors import ShapeError
@@ -28,12 +28,12 @@ class Model(ABC):
 
     def train(
         self,
-        train_x: NDArray[np.float32],
-        train_y: NDArray[np.float32],
+        train_x: np.typing.NDArray[np.float32],
+        train_y: np.typing.NDArray[np.float32],
         epochs: int,
         batch_size: int,
-        val_x: NDArray[np.float32] = None,
-        val_y: NDArray[np.float32] = None,
+        val_x: np.typing.NDArray[np.float32] = None,
+        val_y: np.typing.NDArray[np.float32] = None,
         shuffle: bool = True,
     ):
         """Method to train network on provided dataset."""
@@ -66,55 +66,77 @@ class Model(ABC):
         if not self.initialized:
             self.initialize_weights(train_x[0:batch_size].shape)
 
+        # Prep array on gpu
+        batch_x_array = cp.zeros((batch_size, *train_x.shape[1:]))
+        batch_y_array = cp.zeros((batch_size, *train_y.shape[1:]))
+
         for epoch in range(self.optimizer.epochs, self.optimizer.epochs + epochs):
             print(f"Epoch : {self.optimizer.epochs+1}")
             ids = list(range(0, train_x.shape[0]))
             if shuffle:
                 list_shuffle(ids)
             for batch_idx in tqdm(range(0, train_x.shape[0], batch_size)):
+                batch_x_array = cp.array(
+                    train_x[ids[batch_idx : batch_idx + batch_size]]
+                )
+                batch_y_array = cp.array(
+                    train_y[ids[batch_idx : batch_idx + batch_size]]
+                )
                 self.backward(
-                    train_x[ids[batch_idx : batch_idx + batch_size]],
-                    train_y[ids[batch_idx : batch_idx + batch_size]],
+                    batch_x_array,
+                    batch_y_array,
                 )
             self.optimizer.epochs += 1
             print(
-                f"Training Loss : {np.mean(np.mean(np.array(self.history['training_loss'][epoch]), axis = 1)).get()}"
+                f"Training Loss : {np.mean(cp.mean(cp.array(self.history['training_loss'][epoch]), axis = 1)).get()}"
             )
             if not val_x is None and not val_y is None:
-                validation_loss = self.optimizer.loss.forward(
-                    self.forward(val_x), val_y
-                )
-                validation_loss = np.array(validation_loss).reshape(val_x.shape[0], -1)
-                self.history["validation_loss"][self.optimizer.epochs] = validation_loss
+                if self.optimizer.epochs not in self.history["validation_loss"].keys():
+                    self.history["validation_loss"][self.optimizer.epochs] = []
+
+                for batch_idx in range(0, val_x.shape[0], batch_size):
+                    batch_x_array = cp.array(val_x[batch_idx : batch_idx + batch_size])
+                    batch_y_array = cp.array(val_y[batch_idx : batch_idx + batch_size])
+
+                    prediction = self.forward(batch_x_array)
+                    self.history["validation_loss"][self.optimizer.epochs].append(
+                        self.optimizer.loss.forward(prediction, batch_y_array).get()
+                    )
                 print(
-                    f"Validation Loss : {np.mean(np.mean(validation_loss, axis = 1))}"
+                    f"Validation Loss : {np.mean(np.mean(np.array(self.history['validation_loss'][self.optimizer.epochs]), axis = 1))}"
                 )
 
     def clear_gradients(self):
         """Reset all gradients to 0"""
         for layer in self.layers:
             if layer.has_weights:
-                layer.d_weights = np.zeros(layer.d_weights.shape, dtype=np.float32)
+                layer.d_weights = cp.zeros(layer.d_weights.shape, dtype=cp.float32)
             if layer.has_bias:
-                layer.d_bias = np.zeros(layer.d_bias.shape, dtype=np.float32)
+                layer.d_bias = cp.zeros(layer.d_bias.shape, dtype=cp.float32)
 
     @abstractmethod
-    def forward(self, inputs: NDArray[np.float32]) -> NDArray[np.float32]:
+    def forward(
+        self, inputs: cp.typing.NDArray[cp.float32]
+    ) -> cp.typing.NDArray[cp.float32]:
         """Forward pass of model
 
         Args:
-            inputs (NDArray[np.float32]): inputs to compute
+            inputs (NDArray [cp.float32]): inputs to compute
         Returns:
-            NDArray[np.float32]: model output
+            NDArray [cp.float32]: model output
         """
 
     @abstractmethod
-    def backward(self, inputs: NDArray[np.float32], targets: NDArray[np.float32]):
+    def backward(
+        self,
+        inputs: cp.typing.NDArray[cp.float32],
+        targets: cp.typing.NDArray[np.float32],
+    ):
         """Backward pass of model
 
         Args:
-            inputs (NDArray[np.float32]): Inputs to pass through model
-            targets (NDArray[np.float32]): Targets for loss computation
+            inputs (NDArray [cp.float32]): Inputs to pass through model
+            targets (NDArray [cp.float32]): Targets for loss computation
             optimizer (Optimizer): Optimizer object for weight update computation
         """
 

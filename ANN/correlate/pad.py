@@ -1,7 +1,7 @@
-from typing import Literal, Tuple
+from typing import Literal, Tuple, Union
 
-import cupy as np
-from cupy.typing import NDArray
+import cupy as cp
+import numpy as np
 
 from ANN.errors import ShapeError
 
@@ -31,21 +31,21 @@ def get_max_valid_idx(size_a: int, size_b: int, stride: int) -> int:
 
 
 def pad(
-    input_a: NDArray[np.float32],
+    input_a: Union[np.typing.NDArray[np.float32], cp.typing.NDArray[cp.float32]],
     shape_b: Tuple[int, ...],
     step_size: Tuple[int, int],
     padding: Literal["valid", "full", "same"],
-) -> NDArray[np.float32]:
+) -> Union[np.typing.NDArray[np.float32], cp.typing.NDArray[cp.float32]]:
     """Pad array to match desired convolution procedure when convolved with kernel of specified shape
 
     Args:
-        input_a (NDArray[np.float32]): Array to be padded, expect (n_samples, x_dim, y_dim, channels)
+        input_a (Union[np.typing.NDArray[np.float32], cp.typing.NDArray[cp.float32]]): Array to be padded, expect (n_samples, x_dim, y_dim, channels)
         shape_b (Tuple[int,...]): Shape array will be convolved with expect (x_dim,y_dim)
         step_size (Tuple[int, int]): Step size to be used in convolution
         padding (Literal["valid", "full", "same"]): Padding strategy to employ
 
     Returns:
-        NDArray[np.float32]: Padded array
+        Union[np.typing.NDArray[np.float32], cp.typing.NDArray[cp.float32]]: Padded array
     """
 
     if len(input_a.shape) != 4:
@@ -60,6 +60,12 @@ def pad(
             Received {shape_b=} instead."
         )
 
+    padding_function = None
+    if isinstance(input_a, np.ndarray):
+        padding_function = np.pad
+    if isinstance(input_a, cp.ndarray):
+        padding_function = cp.pad
+
     if padding == "valid":
         return input_a[
             :,
@@ -70,14 +76,14 @@ def pad(
 
     if padding == "full":
         pad_size = (shape_b[0] - 1, shape_b[1] - 1)
-        return np.pad(
+        return padding_function(
             input_a,
             [[0, 0], [pad_size[0], pad_size[0]], [pad_size[1], pad_size[1]], [0, 0]],
             "constant",
         )
 
     if padding == "same":
-        return np.pad(
+        return padding_function(
             input_a,
             [
                 [0, 0],
@@ -90,20 +96,20 @@ def pad(
 
 
 def unpad(
-    inputs: NDArray[np.float32],
+    inputs: cp.typing.NDArray[cp.float32],
     kernel_shape: Tuple[int, int],
     target_shape: Tuple[int, int, int, int],
     padding: Literal["full", "same", "valid"],
-) -> NDArray[np.float32]:
+) -> cp.typing.NDArray[cp.float32]:
     """Removes padding according to scheme used
 
     Args:
-        inputs (NDArray[np.float32]): Array to unpad
+        inputs (NDArray [cp.float32]): Array to unpad
         target_shape (Tuple[int,int,int,int]): Target shape of array
         padding (Literal["full", "same", "valid"]): Padding scheme used
 
     Returns:
-        NDArray[np.float32]: Unpadded array
+        NDArray [cp.float32]: Unpadded array
     """
 
     if len(inputs.shape) != 4:
@@ -147,4 +153,4 @@ def unpad(
     if padding == "valid":
         pad_x = target_shape[1] - inputs.shape[1]
         pad_y = target_shape[2] - inputs.shape[2]
-        return np.pad(inputs, [[0, 0], [0, pad_x], [0, pad_y], [0, 0]], "constant")
+        return cp.pad(inputs, [[0, 0], [0, pad_x], [0, pad_y], [0, 0]], "constant")

@@ -2,7 +2,7 @@
 """
 from typing import Optional, Tuple
 
-import cupy as np
+import cupy as cp
 from cupy.typing import NDArray
 
 from ANN.activation_functions.activation import Activation
@@ -20,8 +20,8 @@ class Dense(Layer):
         n_neurons: int,
         activation: Activation = ReLu(),
         input_shape: Optional[int] = None,
-        l1: Optional[np.float32] = None,
-        l2: Optional[np.float32] = None,
+        l1: Optional[cp.float32] = None,
+        l2: Optional[cp.float32] = None,
     ):
         """Create a dense layer
 
@@ -47,6 +47,9 @@ class Dense(Layer):
         self.inputs = None
         self.initialized = False
 
+        self.l1 = l1
+        self.l2 = l2
+
         if input_shape is not None:
             self.initialize((input_shape))
 
@@ -59,14 +62,14 @@ class Dense(Layer):
             output_shape=self.output_shape,
         )
 
-    def forward(self, inputs: NDArray[np.float32]) -> NDArray[np.float32]:
+    def forward(self, inputs: NDArray[cp.float32]) -> NDArray[cp.float32]:
         """Compute forward pass
 
         Args:
-            inputs (NDArray[np.float32]): Input array of shape (n_samples, n_inputs)
+            inputs (NDArray [cp.float32]): Input array of shape (n_samples, n_inputs)
 
         Returns:
-            NDArray[np.float32]: Activation values.
+            NDArray [cp.float32]: Activation values.
         """
         if len(inputs.shape) != 2:
             raise ShapeError(
@@ -80,26 +83,26 @@ class Dense(Layer):
         self.inputs = inputs
         # Compute and return activations
         return self.activation_function.forward(
-            np.dot(self.inputs, self.weights) + self.bias
+            cp.dot(self.inputs, self.weights) + self.bias
         )
 
-    def backward(self, gradient: NDArray[np.float32]) -> NDArray[np.float32]:
+    def backward(self, gradient: NDArray[cp.float32]) -> NDArray[cp.float32]:
         """Compute backward pass
 
         Args:
-            error (NDArray[np.float32]): Error matrix to propagate.
+            error (NDArray [cp.float32]): Error matrix to propagate.
             Expect shape (n_samples, activations)
 
         Returns:
-            NDArray[np.float32]: Input gradients for backpropagation.
+            NDArray [cp.float32]: Input gradients for backpropagation.
             Shape (n_samples, input gradients)
         """
         # Get derivative of outputs with regards to dot product
         d_activation = self.activation_function.backward(gradient)
         # Get derivative of loss with regards to weights and store in
         # gradient property
-        self.d_bias = np.sum(d_activation, axis=0)
-        self.d_weights = np.dot(self.inputs.T, d_activation)
+        self.d_bias = cp.sum(d_activation, axis=0)
+        self.d_weights = cp.dot(self.inputs.T, d_activation)
         if self.l1 is not None:
             self.d_weights[self.weights > 0] += self.l1
             self.d_weights[self.weights < 0] -= self.l1
@@ -107,7 +110,7 @@ class Dense(Layer):
             self.d_weights -= self.l2 * self.weights
             self.d_bias -= self.l2 * self.bias
         # Get derivative of output with regards to inputs.
-        return np.dot(d_activation, self.weights.T)
+        return cp.dot(d_activation, self.weights.T)
 
     def initialize(self, input_shape: Tuple[int, int]):
         # Store shape of input
@@ -120,10 +123,10 @@ class Dense(Layer):
         self.weights = gorlot(
             input_shape[1], self.n_neurons, (input_shape[1]) * self.n_neurons
         ).reshape(self.input_shape[1], self.n_neurons)
-        self.bias = np.zeros((self.n_neurons))
+        self.bias = cp.zeros((self.n_neurons))
         # Create matrix for inputs with added bias term
-        self.inputs = np.ones(input_shape, dtype=np.float32)
+        self.inputs = cp.ones(input_shape, dtype=cp.float32)
         # Create matrix for weights derivative
-        self.d_weights = np.zeros(self.weights.shape, dtype=np.float32)
-        self.d_bias = np.zeros(self.bias.shape, dtype=np.float32)
+        self.d_weights = cp.zeros(self.weights.shape, dtype=cp.float32)
+        self.d_bias = cp.zeros(self.bias.shape, dtype=cp.float32)
         self.initialized = True

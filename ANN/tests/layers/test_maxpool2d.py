@@ -1,10 +1,10 @@
 import cupy as cp
-import numpy as np
+import numpy as cp
 import tensorflow as tf
 
 from ANN.layers.max_pooling import MaxPool2D
 
-rnd = np.random.default_rng()
+rnd = cp.random.default_rng()
 
 
 def test_forward():
@@ -17,7 +17,7 @@ def test_forward():
 
     tf_forward = tf_layer(tf.convert_to_tensor(test_inputs))
     ann_forward = ann_layer.forward(cp.array(test_inputs))
-    assert np.allclose(tf_forward.numpy(), ann_forward, rtol=1e-6, atol=1e-6)
+    assert cp.allclose(tf_forward.numpy(), ann_forward, rtol=1e-6, atol=1e-6)
 
 
 def test_backward():
@@ -42,4 +42,4 @@ def test_backward():
     print(tf_x_grad)
     print(ann_backward)
 
-    assert np.allclose(tf_x_grad, ann_backward, rtol=1e-6, atol=1e-6)
+    assert cp.allclose(tf_x_grad, ann_backward, rtol=1e-6, atol=1e-6)

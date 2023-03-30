@@ -2,7 +2,7 @@
 """
 
 
-import cupy as np
+import cupy as cp
 
 from ANN.activation_functions.activation import Activation
 
@@ -18,12 +18,12 @@ class Softmax(Activation):
         Activation.__init__(self)
 
     def forward(self, pre_activation):
-        exp_x = np.exp(pre_activation - np.max(pre_activation, axis=1, keepdims=True))
-        self.activations = exp_x / np.sum(exp_x, axis=1, keepdims=True)
+        exp_x = cp.exp(pre_activation - cp.max(pre_activation, axis=1, keepdims=True))
+        self.activations = exp_x / cp.sum(exp_x, axis=1, keepdims=True)
         return self.activations
 
     def backward(self, partial_loss_derivative):
-        jacobian_matrices = np.empty(
+        jacobian_matrices = cp.empty(
             (
                 partial_loss_derivative.shape[0],
                 self.activations.shape[1],
@@ -31,7 +31,7 @@ class Softmax(Activation):
             )
         )
         for i in range(partial_loss_derivative.shape[0]):
-            jacobian_matrices[i] = np.diag(self.activations[i]) - np.outer(
+            jacobian_matrices[i] = cp.diag(self.activations[i]) - cp.outer(
                 self.activations[i], self.activations[i]
             )
-        return np.einsum("ijk,ik->ij", jacobian_matrices, partial_loss_derivative)
+        return cp.einsum("ijk,ik->ij", jacobian_matrices, partial_loss_derivative)

@@ -1,5 +1,5 @@
 import cupy as cp
-import numpy as np
+import numpy as cp
 import tensorflow as tf
 
 from ANN.activation_functions.linear import Linear
@@ -11,7 +11,7 @@ from ANN.layers.dense import Dense
 from ANN.loss_functions.cross_entropy import CrossEntropy
 from ANN.loss_functions.mean_square_error import MSE
 
-rnd = np.random.default_rng()
+rnd = cp.random.default_rng()
 
 
 def test_forward():
@@ -26,7 +26,7 @@ def test_forward():
     tf_forward = tf_layer(tf.convert_to_tensor(test_inputs)).numpy()
     ann_forward = ann_layer.forward(cp.array(test_inputs)).get()
     assert tf_forward.shape == ann_forward.shape
-    assert np.allclose(tf_forward, ann_forward, rtol=1e-6, atol=1e-6)
+    assert cp.allclose(tf_forward, ann_forward, rtol=1e-6, atol=1e-6)
 
 
 def test_backward():
@@ -59,9 +59,9 @@ def test_backward():
     ann_forward = ann_layer.forward(cp.array(test_inputs))
     ann_backward = ann_layer.backward(cp.ones((1, 64)))
 
-    assert np.allclose(tf_w_grad[1], ann_layer.d_bias, rtol=1e-5, atol=1e-5)
-    assert np.allclose(tf_w_grad[0], ann_layer.d_weights, rtol=1e-5, atol=1e-5)
-    assert np.allclose(tf_x_grad, ann_backward, rtol=1e-5, atol=1e-5)
+    assert cp.allclose(tf_w_grad[1], ann_layer.d_bias, rtol=1e-5, atol=1e-5)
+    assert cp.allclose(tf_w_grad[0], ann_layer.d_weights, rtol=1e-5, atol=1e-5)
+    assert cp.allclose(tf_x_grad, ann_backward, rtol=1e-5, atol=1e-5)
 
 
 def test_loss_propagation_mse():
@@ -105,10 +105,10 @@ def test_loss_propagation_mse():
         tf_d_loss = tape.gradient(loss, tf_pred)
         tf_d_weights = tape.gradient(loss, tf_layer.trainable_variables)
         tf_d_x = tape.gradient(loss, tf_input)
-        assert np.allclose(tf_d_loss.numpy(), ann_d_loss)
-        assert np.allclose(tf_d_weights[0].numpy(), ann_layer.d_weights)
-        assert np.allclose(tf_d_weights[1].numpy(), ann_layer.d_bias)
-        assert np.allclose(tf_d_x.numpy(), ann_d_x)
+        assert cp.allclose(tf_d_loss.numpy(), ann_d_loss)
+        assert cp.allclose(tf_d_weights[0].numpy(), ann_layer.d_weights)
+        assert cp.allclose(tf_d_weights[1].numpy(), ann_layer.d_bias)
+        assert cp.allclose(tf_d_x.numpy(), ann_d_x)
 
 
 def test_loss_propagation_cross_entropy():
@@ -129,7 +129,7 @@ def test_loss_propagation_cross_entropy():
 
         sample_input = rnd.standard_normal((N_SAMPLES, N_FEATURES))
         classes = rnd.integers(0, N_NEURONS, (N_SAMPLES, 1))
-        sample_label = np.zeros((N_SAMPLES, N_NEURONS), dtype=np.float32)
+        sample_label = cp.zeros((N_SAMPLES, N_NEURONS), dtype=cp.float32)
         for i in range(N_SAMPLES):
             sample_label[i, classes[i]] = 1
 
@@ -164,7 +164,7 @@ def test_loss_propagation_cross_entropy():
         tf_d_weights = tape.gradient(loss, tf_layer.trainable_variables)
         tf_d_x = tape.gradient(loss, tf_input)
 
-        assert np.allclose(tf_d_loss.numpy(), ann_d_loss)
-        assert np.allclose(tf_d_weights[0].numpy(), ann_layer.d_weights)
-        assert np.allclose(tf_d_weights[1].numpy(), ann_layer.d_bias)
-        assert np.allclose(tf_d_x.numpy(), ann_d_x)
+        assert cp.allclose(tf_d_loss.numpy(), ann_d_loss)
+        assert cp.allclose(tf_d_weights[0].numpy(), ann_layer.d_weights)
+        assert cp.allclose(tf_d_weights[1].numpy(), ann_layer.d_bias)
+        assert cp.allclose(tf_d_x.numpy(), ann_d_x)

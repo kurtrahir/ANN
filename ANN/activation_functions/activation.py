@@ -3,7 +3,7 @@
 
 from abc import abstractmethod
 
-import cupy as np
+import cupy as cp
 from numpy import ndarray
 
 
@@ -16,24 +16,24 @@ class Activation:
         self.activations = None
 
     @abstractmethod
-    def forward(self, pre_activation: ndarray[np.float32]) -> ndarray[np.float32]:
+    def forward(self, pre_activation: ndarray[cp.float32]) -> ndarray[cp.float32]:
         """Calculate forward pass of activation function
 
         Args:
-            pre_activation (ndarray[np.float32]): Preactivation values
+            pre_activation (ndarray [cp.float32]): Preactivation values
         Returns:
-            ndarray[np.float32]: Activation values
+            ndarray [cp.float32]: Activation values
         """
 
     @abstractmethod
     def backward(
-        self, partial_loss_derivative: ndarray[np.float32]
-    ) -> ndarray[np.float32]:
+        self, partial_loss_derivative: ndarray[cp.float32]
+    ) -> ndarray[cp.float32]:
         """Calculate backward pass using given partial loss derivative
            (combines partial loss derivative with local gradient)
 
         Args:
-            partial_loss_derivative (ndarray[np.float32]): Partial loss derivative values
+            partial_loss_derivative (ndarray [cp.float32]): Partial loss derivative values
         Returns:
-            ndarray[np.float32]: Partial derivative (da/dz * dL/da)
+            ndarray [cp.float32]: Partial derivative (da/dz * dL/da)
         """
