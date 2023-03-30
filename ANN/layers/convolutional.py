@@ -73,6 +73,8 @@ class Conv2D(Layer):
         step_size: Union[int, Tuple[int, int]] = (1, 1),
         input_shape: Optional[Tuple[int, int, int]] = None,
         padding: Optional[Literal["full", "valid", "same"]] = "full",
+        l1: Optional[np.float32] = None,
+        l2: Optional[np.float32] = None,
     ):
         # verify valid setup
         if step_size > kernel_shape:
@@ -177,6 +179,13 @@ class Conv2D(Layer):
 
         # for channel in range(self.d_weights.shape[-1]):
         self.d_weights = corr2d_multi_in_out(self.inputs.T, d_activation.T, (1, 1)).T
+
+        if self.l1 is not None:
+            self.d_weights[self.weights > 0] += self.l1
+            self.d_weights[self.weights < 0] -= self.l1
+        if self.l2 is not None:
+            self.d_weights -= self.l2 * self.weights
+            self.d_bias -= self.l2 * self.bias
 
         if self.step_size != (1, 1):
             pad_w = self.kernel_shape[0] - 1

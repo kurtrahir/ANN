@@ -20,6 +20,8 @@ class Dense(Layer):
         n_neurons: int,
         activation: Activation = ReLu(),
         input_shape: Optional[int] = None,
+        l1: Optional[np.float32] = None,
+        l2: Optional[np.float32] = None,
     ):
         """Create a dense layer
 
@@ -98,6 +100,12 @@ class Dense(Layer):
         # gradient property
         self.d_bias = np.sum(d_activation, axis=0)
         self.d_weights = np.dot(self.inputs.T, d_activation)
+        if self.l1 is not None:
+            self.d_weights[self.weights > 0] += self.l1
+            self.d_weights[self.weights < 0] -= self.l1
+        if self.l2 is not None:
+            self.d_weights -= self.l2 * self.weights
+            self.d_bias -= self.l2 * self.bias
         # Get derivative of output with regards to inputs.
         return np.dot(d_activation, self.weights.T)
 
