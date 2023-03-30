@@ -40,6 +40,8 @@ class Dense(Layer):
         self.input_shape = None
         self.d_weights = None
         self.weights = None
+        self.bias = None
+        self.d_bias = None
         self.inputs = None
         self.initialized = False
 
@@ -49,7 +51,7 @@ class Dense(Layer):
         Layer.__init__(
             self,
             has_weights=True,
-            has_bias=False,
+            has_bias=True,
             weights=self.weights,
             input_shape=self.input_shape,
             output_shape=self.output_shape,
@@ -73,9 +75,11 @@ class Dense(Layer):
         if self.initialized is False:
             self.initialize(inputs[0].shape)
         # Set input values (skipping bias at the end of the input array property)
-        self.inputs = np.append(inputs, np.ones((inputs.shape[0], 1)), axis=1)
+        self.inputs = inputs
         # Compute and return activations
-        return self.activation_function.forward(np.dot(self.inputs, self.weights))
+        return self.activation_function.forward(
+            np.dot(self.inputs, self.weights) + self.bias
+        )
 
     def backward(self, gradient: NDArray[np.float32]) -> NDArray[np.float32]:
         """Compute backward pass
@@ -92,13 +96,12 @@ class Dense(Layer):
         d_activation = self.activation_function.backward(gradient)
         # Get derivative of loss with regards to weights and store in
         # gradient property
+        self.d_bias += np.sum(d_activation, axis=0)
         self.d_weights += np.dot(self.inputs.T, d_activation)
         # Get derivative of output with regards to inputs.
-        return np.dot(d_activation, self.weights[:-1, :].T)
+        return np.dot(d_activation, self.weights.T)
 
     def initialize(self, input_shape: Tuple[int, int]):
-        print("Initializing Dense Layer")
-
         # Store shape of input
         if len(input_shape) < 2:
             raise ShapeError(
@@ -106,16 +109,13 @@ class Dense(Layer):
             )
         self.input_shape = input_shape
         # Initialize Weights according to given input shape
-        self.weights = np.concatenate(
-            (
-                gorlot(
-                    input_shape[1], self.n_neurons, (input_shape[1]) * self.n_neurons
-                ).reshape(input_shape[1], self.n_neurons),
-                np.zeros((1, self.n_neurons)),
-            )
-        )
+        self.weights = gorlot(
+            input_shape[1], self.n_neurons, (input_shape[1]) * self.n_neurons
+        ).reshape(self.input_shape[1], self.n_neurons)
+        self.bias = np.zeros((self.n_neurons))
         # Create matrix for inputs with added bias term
-        self.inputs = np.ones((input_shape[0], input_shape[1] + 1), dtype=np.float32)
+        self.inputs = np.ones(input_shape, dtype=np.float32)
         # Create matrix for weights derivative
         self.d_weights = np.zeros(self.weights.shape, dtype=np.float32)
+        self.d_bias = np.zeros(self.bias.shape, dtype=np.float32)
         self.initialized = True

@@ -29,11 +29,14 @@ class SGD(Optimizer):
             # Update weights, averaging over batch and multiplying with learning rate.
             for layer in model.layers:
                 if layer.has_weights:
-                    layer.weights -= (
-                        self.learning_rate * layer.d_weights / inputs.shape[0]
+                    layer.weights -= np.divide(
+                        np.multiply(self.learning_rate, layer.d_weights),
+                        inputs.shape[0],
                     )
                 if layer.has_bias:
-                    layer.bias -= self.learning_rate * layer.d_bias / inputs.shape[0]
+                    layer.bias -= np.divide(
+                        np.multiply(self.learning_rate, layer.d_bias), inputs.shape[-1]
+                    )
 
             model.clear_gradients()
 

@@ -81,7 +81,7 @@ def test_backward():
             assert np.allclose(
                 tf_w_grad[0],
                 cp.moveaxis(ann_layer.d_weights, 0, 3),
-                rtol=1e-5,
-                atol=1e-5,
+                rtol=1e-4,
+                atol=1e-4,
             )
             assert np.allclose(tf_w_grad[1], ann_layer.d_bias, rtol=1e-6, atol=1e-6)

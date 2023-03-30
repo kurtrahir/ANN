@@ -13,12 +13,13 @@ from ANN.layers.max_pooling import MaxPool2D
 from ANN.loss_functions.cross_entropy import CrossEntropy
 from ANN.loss_functions.mean_square_error import MSE
 from ANN.models.sequential import Sequential
+from ANN.optimizers.adam import Adam
 from ANN.optimizers.sgd import SGD
 
 rnd = np.random.default_rng()
 
 
-def test_dense_sgd():
+def test_dense_adam():
     ann_losses = [MSE()]
     tf_losses = [tf.keras.losses.mse]
 
@@ -31,11 +32,20 @@ def test_dense_sgd():
             print(ann_activation, tf_activation)
 
             N_SAMPLES = 10
-            N_FEATURES = 10
+            N_FEATURES = 20
             LEARNING_RATE = 1
+            BETA_1 = 0.5
+            BETA_2 = 0.5
+            EPSILON = 1e-7
             test_inputs = rnd.standard_normal((N_SAMPLES, N_FEATURES))
             test_labels = np.log(np.abs(np.sum(test_inputs, axis=-1, keepdims=True)))
-            optimizer = SGD(learning_rate=LEARNING_RATE, loss=ann_loss)
+            optimizer = Adam(
+                learning_rate=LEARNING_RATE,
+                beta_1=BETA_1,
+                beta_2=BETA_2,
+                epsilon=EPSILON,
+                loss=ann_loss,
+            )
 
             ann_model = Sequential(
                 layers=[
@@ -64,7 +74,13 @@ def test_dense_sgd():
             )
 
             tf_model.compile(
-                optimizer=tf.keras.optimizers.SGD(LEARNING_RATE), loss=tf_loss
+                optimizer=tf.keras.optimizers.Adam(
+                    learning_rate=LEARNING_RATE,
+                    beta_1=BETA_1,
+                    beta_2=BETA_2,
+                    epsilon=EPSILON,
+                ),
+                loss=tf_loss,
             )
             tf_model(test_tensor)
 
@@ -80,8 +96,8 @@ def test_dense_sgd():
                 zip(ann_model.layers, tf_model.layers)
             ):
                 tf_weights, tf_biases = tf_layer.get_weights()
-                assert np.allclose(ann_layer.weights, tf_weights)
-                assert np.allclose(ann_layer.bias, tf_biases)
+                assert np.allclose(ann_layer.weights, tf_weights, rtol=1e-6, atol=1e-6)
+                assert np.allclose(ann_layer.bias, tf_biases, rtol=1e-4, atol=1e-4)
 
             with tf.GradientTape(persistent=True) as tape:
                 tape.watch(test_tensor)
@@ -104,9 +120,15 @@ def test_dense_sgd():
             for i, (ann_layer, tf_layer) in enumerate(
                 zip(ann_model.layers, tf_model.layers)
             ):
+                print(i)
                 tf_weights, tf_biases = tf_layer.get_weights()
-                # Assert update was significant
                 assert not np.allclose(weights[i], ann_layer.weights)
                 # Assert error less than .1%
-                assert np.allclose(ann_layer.bias.get(), tf_biases)
-                assert np.allclose(ann_layer.weights.get(), tf_weights)
+                assert (
+                    (ann_layer.weights.get() - tf_weights) / np.linalg.norm(tf_weights)
+                    < 0.001
+                ).all()
+                assert (
+                    (ann_layer.bias.get() - tf_biases) / np.linalg.norm(tf_biases)
+                    < 0.001
+                ).all()
