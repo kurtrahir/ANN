@@ -166,7 +166,7 @@ class Conv2D(Layer):
         d_activation = self.activation_function.backward(gradient)
 
         # Get bias gradient
-        self.d_bias += np.sum(d_activation, axis=(0, 1, 2))
+        self.d_bias = np.sum(d_activation, axis=(0, 1, 2))
 
         # Dilate activation gradient
         if self.step_size != (1, 1):

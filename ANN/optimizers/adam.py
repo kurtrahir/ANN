@@ -58,8 +58,6 @@ class Adam(Optimizer):
                         layer.d_bias / n_samples, f"bias_{i}"
                     )
 
-            model.clear_gradients()
-
         Optimizer.__init__(self, loss=loss, backward=backward)
 
     def update_momentums(self, gradients, layer_idx):

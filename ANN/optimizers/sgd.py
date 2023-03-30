@@ -38,6 +38,4 @@ class SGD(Optimizer):
                         np.multiply(self.learning_rate, layer.d_bias), inputs.shape[-1]
                     )
 
-            model.clear_gradients()
-
         Optimizer.__init__(self, loss=loss, backward=backward)
