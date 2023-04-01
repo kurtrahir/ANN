@@ -88,7 +88,7 @@ class Model(ABC):
                 )
             self.optimizer.epochs += 1
             print(
-                f"Training Loss : {np.mean(cp.mean(cp.array(self.history['training_loss'][epoch]), axis = 1)).get()}"
+                f"Training Loss : {np.mean(np.mean(np.array(self.history['training_loss'][epoch])))}"
             )
             if not val_x is None and not val_y is None:
                 if self.optimizer.epochs not in self.history["validation_loss"].keys():
@@ -98,12 +98,15 @@ class Model(ABC):
                     batch_x_array = cp.array(val_x[batch_idx : batch_idx + batch_size])
                     batch_y_array = cp.array(val_y[batch_idx : batch_idx + batch_size])
 
-                    prediction = self.forward(batch_x_array)
-                    self.history["validation_loss"][self.optimizer.epochs].append(
-                        self.optimizer.loss.forward(prediction, batch_y_array).get()
-                    )
+                    prediction = self.forward(batch_x_array, training=False)
+                    for a in (
+                        self.optimizer.loss.forward(prediction, batch_y_array)
+                        .get()
+                        .tolist()
+                    ):
+                        self.history["validation_loss"][self.optimizer.epochs].append(a)
                 print(
-                    f"Validation Loss : {np.mean(np.mean(np.array(self.history['validation_loss'][self.optimizer.epochs]), axis = 1))}"
+                    f"Validation Loss : {np.mean(np.mean(np.array(self.history['validation_loss'][self.optimizer.epochs])))}"
                 )
 
     def clear_gradients(self):
@@ -147,3 +150,14 @@ class Model(ABC):
         Args:
             input_shape (Tuple[int,...]): Shape of inputs.
         """
+
+    def predict(
+        self, inputs: cp.typing.NDArray[cp.float32], batch_size
+    ) -> np.typing.NDArray[np.float32]:
+        outputs = np.zeros((inputs.shape[0], *self.layers[-1].output_shape[1:]))
+        for batch_idx in range(0, inputs.shape[0], batch_size):
+            batch_x_array = cp.array(inputs[batch_idx : batch_idx + batch_size])
+            outputs[batch_idx : batch_idx + batch_size] = self.forward(
+                batch_x_array, training=False
+            ).get()
+        return outputs

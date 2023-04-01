@@ -38,10 +38,11 @@ class MaxPool2D(Layer):
             has_weights=False,
             input_shape=None,
             output_shape=None,
-            weights=None,
         )
 
-    def forward(self, inputs: NDArray[cp.float32]) -> NDArray[cp.float32]:
+    def forward(
+        self, inputs: NDArray[cp.float32], training: bool = False
+    ) -> NDArray[cp.float32]:
         """Compute forward pass on provided inputs.
 
         Args:

@@ -16,12 +16,12 @@ class Flatten(Layer):
         Layer.__init__(
             self,
             has_weights=False,
-            weights=None,
+            has_bias=False,
             input_shape=None,
             output_shape=None,
         )
 
-    def forward(self, inputs):
+    def forward(self, inputs, training: bool = False):
         self.input_shape = inputs.shape
         return inputs.reshape(inputs.shape[0], -1)
 

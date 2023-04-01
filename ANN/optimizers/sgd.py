@@ -13,7 +13,7 @@ class SGD(Optimizer):
         self.learning_rate = learning_rate
 
         def backward(model, inputs: NDArray[cp.float32], targets: NDArray[cp.float32]):
-            outputs = model.forward(inputs)
+            outputs = model.forward(inputs, training=True)
 
             d_loss = self.loss.backward(outputs, targets)
 
@@ -21,7 +21,7 @@ class SGD(Optimizer):
                 model.history["training_loss"][self.epochs] = []
 
             model.history["training_loss"][self.epochs].append(
-                self.loss.forward(outputs, targets)
+                self.loss.forward(outputs, targets).get()
             )
 
             del outputs

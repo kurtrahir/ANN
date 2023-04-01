@@ -13,25 +13,26 @@ class Layer:
 
     def __init__(
         self,
-        has_weights,
-        weights,
         input_shape,
         output_shape,
-        has_bias=False,
+        has_weights,
+        has_bias,
     ):
-        self.has_weights = has_weights
-        self.has_bias = has_bias
-
-        self.weights = weights
         self.input_shape = input_shape
         self.output_shape = output_shape
 
+        self.has_weights = has_weights
+        self.has_bias = has_bias
+
     @abstractmethod
-    def forward(self, inputs: NDArray[cp.float32]) -> NDArray[cp.float32]:
+    def forward(
+        self, inputs: NDArray[cp.float32], training: bool
+    ) -> NDArray[cp.float32]:
         """Forward pass on provided inputs
 
         Args:
             inputs (NDArray [cp.float32]): Inputs
+            training (bool): Indicate whether this is part of netwrok training.
 
         Returns:
             NDArray [cp.float32]: Layer activation

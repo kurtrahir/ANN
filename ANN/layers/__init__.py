@@ -1,3 +1,4 @@
+from .batch_normalization import BatchNormalization
 from .convolutional import Conv2D
 from .dense import Dense
 from .flatten import Flatten

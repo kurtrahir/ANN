@@ -123,12 +123,11 @@ class Conv2D(Layer):
             self,
             has_weights=True,
             has_bias=True,
-            weights=self.weights,
-            input_shape=self.input_shape,
+            input_shape=input_shape,
             output_shape=self.output_shape,
         )
 
-    def forward(self, inputs: NDArray[cp.float32]) -> NDArray:
+    def forward(self, inputs: NDArray[cp.float32], training: bool = False) -> NDArray:
         """Computes forward pass on the inputs provided.
 
         Args:
@@ -200,8 +199,8 @@ class Conv2D(Layer):
         if self.step_size != (1, 1):
             pad_w = self.kernel_shape[0] - 1
             pad_h = self.kernel_shape[1] - 1
-            d_activation = cp.pad(
-                d_activation,
+            self.activation_function.activations = cp.pad(
+                self.activation_function.activations,
                 [[0, 0], [pad_w, pad_w], [pad_h, pad_h], [0, 0]],
                 "constant",
             )

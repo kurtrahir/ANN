@@ -15,7 +15,10 @@ class BatchNormalization(Layer):
     """Batch normalization implementation"""
 
     def __init__(
-        self, epsilon: cp.float32 = 1e-7, input_shape: Optional[Tuple[int, ...]] = None
+        self,
+        momentum: cp.float32 = 0.99,
+        epsilon: cp.float32 = 1e-7,
+        input_shape: Optional[Tuple[int, ...]] = None,
     ):
         self.weights = None
         self.d_weights = None
@@ -27,6 +30,7 @@ class BatchNormalization(Layer):
             self.initialize(input_shape)
 
         self.epsilon = epsilon
+        self.momentum = momentum
 
         Layer.__init__(
             self,
@@ -36,12 +40,24 @@ class BatchNormalization(Layer):
             output_shape=self.output_shape,
         )
 
-    def forward(self, inputs, training: bool = False):
+    def forward(self, inputs, training):
         if not self.initialized:
             self.initialize(inputs.shape)
         self.inputs = inputs
-        self.mini_batch_mean = cp.mean(self.inputs, axis=0, keepdims=True)
-        self.mini_batch_var = cp.var(self.inputs, axis=0, keepdims=True)
+        if training:
+            self.mini_batch_mean = cp.mean(self.inputs, axis=0, keepdims=True)
+            self.mini_batch_var = cp.var(self.inputs, axis=0, keepdims=True)
+            self.mean_moving_average = (
+                self.mean_moving_average * self.momentum
+                + self.mini_batch_mean * (1 - self.momentum)
+            )
+            self.var_moving_average = (
+                self.var_moving_average * self.momentum
+                + self.mini_batch_var * (1 - self.momentum)
+            )
+        else:
+            self.mini_batch_mean = self.mean_moving_average
+            self.mini_batch_var = self.var_moving_average
         self.activation = (
             self.weights
             * (self.inputs - self.mini_batch_mean)
@@ -80,10 +96,12 @@ class BatchNormalization(Layer):
 
     def initialize(self, input_shape):
         self.input_shape = input_shape
-        n_inputs = reduce(mul, input_shape[1:])
         self.weights = cp.ones((1, *self.input_shape[1:]))
         self.d_weights = cp.zeros(self.weights.shape)
         self.bias = cp.zeros(self.weights.shape)
         self.d_bias = cp.zeros(self.bias.shape)
         self.output_shape = input_shape
         self.initialized = True
+
+        self.mean_moving_average = cp.zeros(self.weights.shape)
+        self.var_moving_average = cp.ones(self.weights.shape)

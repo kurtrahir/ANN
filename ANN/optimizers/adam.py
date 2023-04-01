@@ -35,15 +35,14 @@ class Adam(Optimizer):
 
             n_samples = inputs.shape[0]
             # Accumulate gradients
-            outputs = model.forward(inputs)
+            outputs = model.forward(inputs, training=True)
             d_loss = self.loss.backward(outputs, targets)
 
             if not self.epochs in model.history["training_loss"].keys():
                 model.history["training_loss"][self.epochs] = []
 
-            model.history["training_loss"][self.epochs].append(
-                self.loss.forward(outputs, targets)
-            )
+            for a in self.loss.forward(outputs, targets).get().tolist():
+                model.history["training_loss"][self.epochs].append(a)
             for layer in model.layers[::-1]:
                 d_loss = layer.backward(d_loss)
             # Update weights by obtaining adam update term, averaging over batch
