@@ -31,7 +31,6 @@ class BatchNormalization(Layer):
 
         self.epsilon = epsilon
         self.momentum = momentum
-
         Layer.__init__(
             self,
             has_weights=True,
@@ -61,7 +60,7 @@ class BatchNormalization(Layer):
         self.activation = (
             self.weights
             * (self.inputs - self.mini_batch_mean)
-            / (self.mini_batch_var + self.epsilon)
+            / cp.sqrt(self.mini_batch_var + self.epsilon)
             + self.bias
         )
         return self.activation
@@ -87,16 +86,21 @@ class BatchNormalization(Layer):
         d_input_3 = cp.divide(d_mean, self.inputs.shape[0])
         self.d_input = d_input_1 + d_input_2 + d_input_3
 
-        self.d_bias = cp.sum(gradient, axis=0, keepdims=True)
+        self.d_bias = cp.broadcast_to(
+            cp.sum(gradient.reshape(-1, gradient.shape[-1]), axis=0, keepdims=True),
+            self.d_bias.shape,
+        )
 
         self.d_weights = cp.sum(
-            cp.multiply(gradient, self.activation), axis=0, keepdims=True
+            cp.multiply(gradient, self.activation).reshape(-1, self.d_weights.shape[1]),
+            axis=0,
+            keepdims=True,
         )
         return self.d_input
 
     def initialize(self, input_shape):
         self.input_shape = input_shape
-        self.weights = cp.ones((1, *self.input_shape[1:]))
+        self.weights = cp.ones((1, self.input_shape[-1]))
         self.d_weights = cp.zeros(self.weights.shape)
         self.bias = cp.zeros(self.weights.shape)
         self.d_bias = cp.zeros(self.bias.shape)

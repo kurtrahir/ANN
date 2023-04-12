@@ -50,14 +50,13 @@ def pad(
 
     if len(input_a.shape) != 4:
         raise ShapeError(
-            f"Expected input_a to have shape (n_samples, x_dim, y_dim, channels). \
-            Received {input_a.shape=} instead."
+            f"Expected input_a to have shape (n_samples, x_dim, y_dim, channels)."
+            " Received {input_a.shape=} instead."
         )
 
     if len(shape_b) != 2:
         raise ShapeError(
-            f"Expected shape_b to be (x_dim, y_dim). \
-            Received {shape_b=} instead."
+            f"Expected shape_b to be (x_dim, y_dim)." " Received {shape_b=} instead."
         )
 
     padding_function = None
@@ -114,20 +113,20 @@ def unpad(
 
     if len(inputs.shape) != 4:
         raise ShapeError(
-            f"Expected input_a to have shape (n_samples, x_dim, y_dim, channels). \
-            Received {inputs.shape=} instead."
+            f"Expected input_a to have shape (n_samples, x_dim, y_dim, channels)."
+            " Received {inputs.shape=} instead."
         )
 
     if len(kernel_shape) != 2:
         raise ShapeError(
-            f"Expected shape_b to be (x_dim, y_dim). \
-            Received {kernel_shape=} instead."
+            f"Expected shape_b to be (x_dim, y_dim)."
+            " Received {kernel_shape=} instead."
         )
 
     if len(target_shape) != 4:
         raise ShapeError(
-            f"Expected target_shape to have shape (n_samples, x_dim, y_dim, channels). \
-            Received {target_shape=} instead."
+            f"Expected target_shape to have shape (n_samples, x_dim, y_dim, channels)."
+            " Received {target_shape=} instead."
         )
 
     if inputs.shape == target_shape:

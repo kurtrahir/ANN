@@ -1,5 +1,5 @@
 import cupy as cp
-import numpy as cp
+import numpy as np
 import tensorflow as tf
 
 from ANN.activation_functions.linear import Linear

@@ -80,8 +80,8 @@ class Conv2D(Layer):
         # verify valid setup
         if step_size > kernel_shape:
             raise ShapeError(
-                f"Step size larger than kernel size will result in omitted inputs. \
-                {step_size=}, {kernel_shape=}"
+                f"Step size larger than kernel size will result in omitted inputs."
+                " {step_size=}, {kernel_shape=}"
             )
 
         # utility function for shorthand in the case of a square filter (3) -> (3,3)
@@ -141,8 +141,8 @@ class Conv2D(Layer):
         """
         if len(inputs.shape) != 4:
             raise ShapeError(
-                f"Convolutional layer expected input of shape (n_samples, x_dim, y_dim, channels), \
-                received {inputs.shape=} instead."
+                f"Convolutional layer expected input of shape (n_samples, x_dim, y_dim, channels),"
+                " received {inputs.shape=} instead."
             )
 
         # If first time seeing input shape, initiaze layer.

@@ -1,5 +1,5 @@
 import cupy as cp
-import numpy as cp
+import numpy as np
 import tensorflow as tf
 
 from ANN.activation_functions.linear import Linear
@@ -24,7 +24,7 @@ def test_forward():
     tf_forward = tf_layer(tf.convert_to_tensor(test_inputs))
     tf_layer.set_weights(weights=[weights.get(), bias.get()])
     tf_forward = tf_layer(tf.convert_to_tensor(test_inputs)).numpy()
-    ann_forward = ann_layer.forward(cp.array(test_inputs)).get()
+    ann_forward = ann_layer.forward(cp.array(test_inputs), False).get()
     assert tf_forward.shape == ann_forward.shape
     assert cp.allclose(tf_forward, ann_forward, rtol=1e-6, atol=1e-6)
 
@@ -56,7 +56,7 @@ def test_backward():
     # Get reference input gradient
     tf_x_grad = tape.gradient(tf_forward, test_tensor)
 
-    ann_forward = ann_layer.forward(cp.array(test_inputs))
+    ann_forward = ann_layer.forward(cp.array(test_inputs), training=True)
     ann_backward = ann_layer.backward(cp.ones((1, 64)))
 
     assert cp.allclose(tf_w_grad[1], ann_layer.d_bias, rtol=1e-5, atol=1e-5)
@@ -95,7 +95,9 @@ def test_loss_propagation_mse():
             [cp.asnumpy(ann_layer.weights), cp.asnumpy(ann_layer.bias)]
         )
 
-        ann_d_loss = ann_loss.backward(ann_layer.forward(ann_input), ann_label)
+        ann_d_loss = ann_loss.backward(
+            ann_layer.forward(ann_input, training=True), ann_label
+        )
         ann_d_x = ann_layer.backward(ann_d_loss)
 
         with tf.GradientTape(persistent=True) as tape:

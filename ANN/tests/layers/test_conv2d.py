@@ -1,5 +1,5 @@
 import cupy as cp
-import numpy as cp
+import numpy as np
 import tensorflow as tf
 
 from ANN.activation_functions.linear import Linear
@@ -27,10 +27,11 @@ def test_forward():
         tf_layer = tf.keras.layers.Conv2D(
             64, kernel_size=(3, 3), activation="linear", padding=padding
         )
-        tf_forward = tf_layer(tf.convert_to_tensor(test_inputs))
+        test_tensor = tf.convert_to_tensor(test_inputs.get())
+        tf_forward = tf_layer(test_tensor)
         tf_layer.set_weights(weights=[weights, bias])
-        tf_forward = tf_layer(tf.convert_to_tensor(test_inputs))
-        ann_forward = ann_layer.forward(cp.array(test_inputs))
+        tf_forward = tf_layer(test_tensor)
+        ann_forward = ann_layer.forward(test_inputs)
         assert cp.allclose(tf_forward.numpy(), ann_forward, rtol=1e-6, atol=1e-6)
 
 

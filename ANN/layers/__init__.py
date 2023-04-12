@@ -5,3 +5,6 @@ from .flatten import Flatten
 from .initializers import gorlot
 from .layer import Layer
 from .max_pooling import MaxPool2D
+from .random_rot import RandomRot
+from .random_shift import RandomShift
+from .random_zoom import RandomZoom

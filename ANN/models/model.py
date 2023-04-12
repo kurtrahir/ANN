@@ -39,29 +39,29 @@ class Model(ABC):
         """Method to train network on provided dataset."""
         if train_x.shape[0] != train_y.shape[0]:
             raise ShapeError(
-                f"Mismatched number of samples in training inputs and targets: \
-                {train_x.shape[0]} != {train_y.shape[0]}"
+                f"Mismatched number of samples in training inputs and targets:"
+                f" {train_x.shape[0]} != {train_y.shape[0]}"
             )
         set_list = [(train_x, "training")]
         if not val_x is None and not val_y is None:
             if val_x.shape[0] != val_y.shape[0]:
                 raise ShapeError(
-                    f"Mismatched number of samples in validation inputs and targets: \
-                    {val_x.shape[0]} != {val_y.shape[0]}"
+                    f"Mismatched number of samples in validation inputs and targets:"
+                    f" {val_x.shape[0]} != {val_y.shape[0]}"
                 )
             set_list.append((val_x, "validation"))
 
         for input_x, set_name in set_list:
             if len(input_x.shape) < 2:
                 raise ShapeError(
-                    f"Model expected {set_name} input vector of shape (n_samples, (input_shape))) \
-                    received {input_x.shape} instead."
+                    f"Model expected {set_name} input vector of shape (n_samples, (input_shape)))"
+                    f" received {input_x.shape} instead."
                 )
 
         if train_x.shape[0] % batch_size != 0:
             warnings.warn(
-                "Number of samples not evenly divisible by batch size.\
-                Smaller batch will occur."
+                "Number of samples not evenly divisible by batch size."
+                " Smaller batch will occur."
             )
         if not self.initialized:
             self.initialize_weights(train_x[0:batch_size].shape)

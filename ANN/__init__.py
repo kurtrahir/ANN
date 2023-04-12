@@ -7,7 +7,18 @@ from .activation_functions import (
     Softmax,
     TanH,
 )
-from .layers import BatchNormalization, Conv2D, Dense, Flatten, Layer, MaxPool2D, gorlot
+from .layers import (
+    BatchNormalization,
+    Conv2D,
+    Dense,
+    Flatten,
+    Layer,
+    MaxPool2D,
+    RandomRot,
+    RandomShift,
+    RandomZoom,
+    gorlot,
+)
 from .loss_functions import MSE, CrossEntropy, Loss
 from .metrics import accuracy
 from .models import Model, Sequential

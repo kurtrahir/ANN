@@ -49,21 +49,3 @@ class Sequential(Model):
             layer.initialize(input_shape)
             input_shape = layer.output_shape
         self.initialized = True
-
-    def save_model(self, path: str):
-        model_dict = {}
-        layer_name_dict = {}
-
-        for layer in self.layers:
-            layer_name = layer.__class__.__name__
-            if layer_name not in layer_name_dict.keys():
-                layer_name_dict[layer_name] = 0
-            layer_name += f"_{layer_name_dict[layer_name]}"
-            layer_name_dict[layer_name] += 1
-            if layer.has_weights:
-                model_dict[layer_name] = [layer.weights.get()]
-            if layer.has_bias:
-                model_dict[layer_name].append(layer.bias.get())
-
-        with open(path, "wb") as f:
-            pickle.dump(model_dict, f)

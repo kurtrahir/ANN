@@ -18,46 +18,47 @@ class Adam(Optimizer):
         self.beta_2 = beta_2
         self.learning_rate = learning_rate
         self.epsilon = epsilon
+        Optimizer.__init__(self, loss=loss)
 
-        def backward(model, inputs: NDArray[cp.float32], targets: NDArray[cp.float32]):
-            if not self.momentums:
-                for i, layer in enumerate(model.layers):
-                    if layer.has_weights:
-                        self.momentums[i] = {
-                            "first_order": cp.zeros((layer.weights.shape)),
-                            "second_order": cp.zeros((layer.weights.shape)),
-                        }
-                    if layer.has_bias:
-                        self.momentums[f"bias_{i}"] = {
-                            "first_order": cp.zeros((layer.bias.shape)),
-                            "second_order": cp.zeros((layer.bias.shape)),
-                        }
-
-            n_samples = inputs.shape[0]
-            # Accumulate gradients
-            outputs = model.forward(inputs, training=True)
-            d_loss = self.loss.backward(outputs, targets)
-
-            if not self.epochs in model.history["training_loss"].keys():
-                model.history["training_loss"][self.epochs] = []
-
-            for a in self.loss.forward(outputs, targets).get().tolist():
-                model.history["training_loss"][self.epochs].append(a)
-            for layer in model.layers[::-1]:
-                d_loss = layer.backward(d_loss)
-            # Update weights by obtaining adam update term, averaging over batch
-            # and multiplying by learning rate.
+    def backward(
+        self, model, inputs: NDArray[cp.float32], targets: NDArray[cp.float32]
+    ):
+        if not self.momentums:
             for i, layer in enumerate(model.layers):
                 if layer.has_weights:
-                    layer.weights -= self.learning_rate * self.get_update(
-                        layer.d_weights / n_samples, i
-                    )
+                    self.momentums[i] = {
+                        "first_order": cp.zeros((layer.weights.shape)),
+                        "second_order": cp.zeros((layer.weights.shape)),
+                    }
                 if layer.has_bias:
-                    layer.bias -= self.learning_rate * self.get_update(
-                        layer.d_bias / n_samples, f"bias_{i}"
-                    )
+                    self.momentums[f"bias_{i}"] = {
+                        "first_order": cp.zeros((layer.bias.shape)),
+                        "second_order": cp.zeros((layer.bias.shape)),
+                    }
 
-        Optimizer.__init__(self, loss=loss, backward=backward)
+        n_samples = inputs.shape[0]
+        # Accumulate gradients
+        outputs = model.forward(inputs, training=True)
+        d_loss = self.loss.backward(outputs, targets)
+
+        if not self.epochs in model.history["training_loss"].keys():
+            model.history["training_loss"][self.epochs] = []
+
+        for a in self.loss.forward(outputs, targets).get().tolist():
+            model.history["training_loss"][self.epochs].append(a)
+        for layer in model.layers[::-1]:
+            d_loss = layer.backward(d_loss)
+        # Update weights by obtaining adam update term, averaging over batch
+        # and multiplying by learning rate.
+        for i, layer in enumerate(model.layers):
+            if layer.has_weights:
+                layer.weights -= self.learning_rate * self.get_update(
+                    layer.d_weights / n_samples, i
+                )
+            if layer.has_bias:
+                layer.bias -= self.learning_rate * self.get_update(
+                    layer.d_bias / n_samples, f"bias_{i}"
+                )
 
     def update_momentums(self, gradients, layer_idx):
         """Update first order and second order momentums"""

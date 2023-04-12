@@ -1,5 +1,6 @@
 """Generic Optimizer interface
 """
+from abc import abstractmethod
 from typing import Callable
 
 import cupy as cp
@@ -14,8 +15,10 @@ class Optimizer:
     def __init__(
         self,
         loss: Loss,
-        backward: Callable[[], NDArray[cp.float32]],
     ):
-        self.backward = backward
         self.loss = loss
         self.epochs = 0
+
+    @abstractmethod
+    def backward(inputs: NDArray[cp.float32], targets: NDArray[cp.float32]):
+        """Update the weights of the model using the provided batch."""

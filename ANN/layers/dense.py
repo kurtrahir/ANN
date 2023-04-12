@@ -73,8 +73,8 @@ class Dense(Layer):
         """
         if len(inputs.shape) != 2:
             raise ShapeError(
-                f"Expected input to have shape (n_samples, n_inputs). \
-                Received {inputs.shape=} instead."
+                f"Expected input to have shape (n_samples, n_inputs)."
+                " Received {inputs.shape=} instead."
             )
         # Initialize layer if necessary
         if self.initialized is False:
