@@ -20,19 +20,8 @@ class SGD(Optimizer):
 
         d_loss = self.loss.backward(outputs, targets)
 
-        if not self.epochs in model.history["training_loss"].keys():
-            model.history["training_loss"][self.epochs] = []
-
-        model.history["training_loss"][self.epochs].append(
-            self.loss.forward(outputs, targets).get()
-        )
-
-        del outputs
-
         for layer in model.layers[::-1]:
             d_loss = layer.backward(d_loss)
-
-        del d_loss
 
         # Update weights, averaging over batch and multiplying with learning rate.
         for layer in model.layers:
@@ -45,3 +34,5 @@ class SGD(Optimizer):
                 layer.bias -= cp.divide(
                     cp.multiply(self.learning_rate, layer.d_bias), inputs.shape[-1]
                 )
+
+        return self.loss.forward(outputs, targets)

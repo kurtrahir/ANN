@@ -44,10 +44,9 @@ class Adam(Optimizer):
         if not self.epochs in model.history["training_loss"].keys():
             model.history["training_loss"][self.epochs] = []
 
-        for a in self.loss.forward(outputs, targets).get().tolist():
-            model.history["training_loss"][self.epochs].append(a)
         for layer in model.layers[::-1]:
             d_loss = layer.backward(d_loss)
+
         # Update weights by obtaining adam update term, averaging over batch
         # and multiplying by learning rate.
         for i, layer in enumerate(model.layers):
@@ -59,6 +58,8 @@ class Adam(Optimizer):
                 layer.bias -= self.learning_rate * self.get_update(
                     layer.d_bias / n_samples, f"bias_{i}"
                 )
+
+        return self.loss.forward(outputs, targets)
 
     def update_momentums(self, gradients, layer_idx):
         """Update first order and second order momentums"""

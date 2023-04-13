@@ -42,7 +42,7 @@ class Sequential(Model):
     def backward(self, inputs: NDArray[cp.float32], targets: NDArray[cp.float32]):
         """Computes backward pass on the network"""
         # Hand off backward pass to optimizer
-        self.optimizer.backward(self, inputs, targets)
+        return self.optimizer.backward(self, inputs, targets)
 
     def initialize_weights(self, input_shape):
         for layer in self.layers:

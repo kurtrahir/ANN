@@ -7,6 +7,7 @@ from .activation_functions import (
     Softmax,
     TanH,
 )
+from .callbacks import Callback, ReduceLROnPlateau
 from .layers import (
     BatchNormalization,
     Conv2D,
