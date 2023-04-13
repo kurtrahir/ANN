@@ -95,10 +95,20 @@ def backward(gradient):
 
 ### __Convolutional Layer__
 
-In the dense layers we just reviewed, each neuron learns a weight for every input value plus a bias. This means for $n$ input values and $S$ neurons, a layer will learn $S(n+1)$ parameters. For many applications this may be fine, however when the input consists of images, this can quickly explode the number of parameters to be learned. Notably for a 256x256 image, where each pixel consists of 3 color channels (RGB), using an input layer with 128 neurons we get $(256\times 256 \times 3 + 1) \times 128 = 25,165,952$ parameters.
+In the dense layers we just reviewed, each neuron learns a weight for every input value plus a bias. This means for $n$ input values and $S$ neurons, a layer will learn $S(n+1)$ parameters. For many applications this may be fine, however when the input consists of images, the number parameters to be learned can explode. For example: for a 256x256 image, where each pixel consists of 3 color channels (RGB), using an input layer with 128 neurons we get $(256\times 256 \times 3 + 1) \times 128 = 25,165,952$ parameters.
 
-Convolutional layers aim to reduce the amount of parameters learned by sharing them spatially. This is done through the use of kernels, whose sizes may vary, but typically are used in the shapes of $3\times 3$, $5\times 5$ or $7\times 7$.
+Convolutional layers aim to reduce the amount of parameters learned by sharing them. This is done through the use of kernels, whose sizes may vary, but typically are used in the shapes of $3\times 3$, $5\times 5$ or $7\times 7$.
 
-These kernels are passed over the image computing the dot product between the kernel and the subregion, or receptive field being considered.
+These kernels are passed over the image computing the dot product between the kernel and the subregion (or receptive field) being considered.
 
-A convolutional layer convolves a kernel with it's input. With input $\mathbf{I}(x,y)$ and kernel $\mathbf{K}(k_x,k_y)$, we have $\mathbf{I} \ast \mathbf{K} = \sum_{i=0}^{x}\sum_{j=0}^{y}{I(i,j)}K(k_x - i, k_y - j)$.
+With input $\mathbf{I}$ of size $(x,y)$ and kernel $\mathbf{K}$ of size $(k_x,k_y)$, the output $\mathbf{O}$ of the convolutional layer at index $(i,j)$ is:
+
+ $\mathbf{O}(i,j) = \sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m)\cdot \mathbf{K}(n,m)$, where $\mathbf{O}$ has dimensions $(x-2, y-2)$
+
+ This is the case for a single channel image. If the input has several output channels, the kernel should have the same number of channels. For example for $c$ input channels, $I$ is now $(x,y,c)$ and $K$ is now $(k_x,k_y,c)$. The output becomes:
+
+  $\mathbf{O}(i,j) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(n,m,l)$, where $\mathbf{O}$ has dimensions $(x-2, y-2)$
+
+  Finally, each convolutional layer may have more than one kernel, causing the output to have several channels. For $p$ kernels, $K$ is now $(k_x, k_y, c, p)$ the output of the convolutional layers operation will be:
+
+  $\mathbf{O}(i,j,h) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(n,m,l,h)$, where $\mathbf{O}$ has dimensions $(x-2, y-2, p)$.
