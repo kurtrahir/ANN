@@ -15,8 +15,8 @@ def test_forward():
         pool_size=(2, 2), strides=(2, 2), padding="valid"
     )
 
-    tf_forward = tf_layer(tf.convert_to_tensor(test_inputs))
-    ann_forward = ann_layer.forward(cp.array(test_inputs))
+    tf_forward = tf_layer(tf.convert_to_tensor(cp.asnumpy(test_inputs)))
+    ann_forward = ann_layer.forward(test_inputs)
     assert cp.allclose(tf_forward.numpy(), ann_forward, rtol=1e-6, atol=1e-6)
 
 
@@ -29,7 +29,7 @@ def test_backward():
         pool_size=(2, 2), strides=(2, 2), padding="valid"
     )
 
-    test_tensor = tf.convert_to_tensor(test_inputs)
+    test_tensor = tf.convert_to_tensor(cp.asnumpy(test_inputs))
 
     with tf.GradientTape(persistent=True) as tape:
         tape.watch(test_tensor)

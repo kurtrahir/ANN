@@ -21,7 +21,7 @@ def test_forward():
             input_shape=test_inputs.shape,
             padding=padding,
         )
-        weights = cp.moveaxis(cp.asnumpy(ann_layer.weights), 0, 3)
+        weights = cp.asnumpy(cp.moveaxis(ann_layer.weights, 0, 3))
         bias = cp.asnumpy(ann_layer.bias)
 
         tf_layer = tf.keras.layers.Conv2D(
@@ -52,13 +52,13 @@ def test_backward():
                 input_shape=test_inputs.shape,
                 padding=padding,
             )
-            weights = cp.moveaxis(cp.asnumpy(ann_layer.weights), 0, 3)
+            weights = cp.asnumpy(cp.moveaxis(ann_layer.weights, 0, 3))
             bias = cp.asnumpy(ann_layer.bias)
 
             tf_layer = tf.keras.layers.Conv2D(
                 4, kernel_size=(3, 3), activation=t_a, padding=padding
             )
-            test_tensor = tf.convert_to_tensor(test_inputs)
+            test_tensor = tf.convert_to_tensor(test_inputs.get())
             tf_forward = tf_layer(test_tensor)
             tf_layer.set_weights(weights=[weights, bias])
             with tf.GradientTape(persistent=True) as tape:
@@ -78,7 +78,7 @@ def test_backward():
             )
             assert cp.allclose(tf_x_grad, ann_backward, rtol=1e-5, atol=1e-5)
             temp_ann_weights = cp.moveaxis(ann_layer.d_weights, 0, 3)
-            print(cp.max(tf_w_grad[0] - cp.asnumpy(cp.around(temp_ann_weights, 5))))
+            print(np.max(tf_w_grad[0] - cp.asnumpy(cp.around(temp_ann_weights, 5))))
             assert cp.allclose(
                 tf_w_grad[0],
                 cp.moveaxis(ann_layer.d_weights, 0, 3),

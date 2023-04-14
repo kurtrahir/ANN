@@ -24,13 +24,13 @@ def test_forward():
     ann_forward = cross_entropy.forward(test_inputs, cp.array(test_labels))
 
     tf_forward = tf.keras.losses.categorical_crossentropy(
-        test_labels, cp.asnumpy(test_inputs)
+        cp.asnumpy(test_labels), cp.asnumpy(test_inputs)
     )
 
     print(ann_forward.shape)
     print(tf_forward.shape)
 
-    assert cp.allclose(cp.asnumpy(ann_forward), tf_forward.numpy())
+    assert np.allclose(cp.asnumpy(ann_forward), tf_forward.numpy())
 
 
 def test_backward():
@@ -53,11 +53,11 @@ def test_backward():
     with tf.GradientTape() as tape:
         tape.watch(test_tensor)
         tf_forward = tf.keras.losses.categorical_crossentropy(
-            test_labels, test_tensor, from_logits=False
+            cp.asnumpy(test_labels), test_tensor, from_logits=False
         )
     tf_gradient = tape.gradient(tf_forward, test_tensor)
 
     print(tf_gradient.shape)
     print(ann_backward.shape)
 
-    assert cp.allclose(cp.asnumpy(ann_backward), tf_gradient.numpy())
+    assert np.allclose(cp.asnumpy(ann_backward), tf_gradient.numpy())

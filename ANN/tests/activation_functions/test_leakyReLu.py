@@ -10,7 +10,7 @@ rnd = cp.random.default_rng()
 def test_forward():
     test_inputs = rnd.standard_normal((1, 100))
     ann_forward = LeakyReLu(0.3).forward(cp.array(test_inputs))
-    tf_forward = tf.keras.layers.LeakyReLU(0.3)(tf.convert_to_tensor(test_inputs))
+    tf_forward = tf.keras.layers.LeakyReLU(0.3)(tf.convert_to_tensor(test_inputs.get()))
     assert cp.isclose(ann_forward, tf_forward).all()
 
 
@@ -19,7 +19,7 @@ def test_backward():
     relu = LeakyReLu(0.3)
     _ = relu.forward(cp.array(test_inputs))
     ann_backward = relu.backward(cp.ones((1, 100)))
-    tensor_inputs = tf.convert_to_tensor(test_inputs)
+    tensor_inputs = tf.convert_to_tensor(test_inputs.get())
     with tf.GradientTape(persistent=True) as tape:
         tape.watch(tensor_inputs)
         tf_forward = tf.keras.layers.LeakyReLU(0.3)(tensor_inputs)

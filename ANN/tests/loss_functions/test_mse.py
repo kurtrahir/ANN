@@ -20,7 +20,7 @@ def test_forward():
 
     ann_forward = mse.forward(test_inputs, cp.array(test_labels))
 
-    tf_forward = tf.keras.losses.mse(test_labels, cp.asnumpy(test_inputs))
+    tf_forward = tf.keras.losses.mse(test_labels.get(), test_inputs.get())
 
     print(ann_forward.shape)
     print(tf_forward.shape)
@@ -41,17 +41,17 @@ def test_backward():
 
     ann_forward = mse.forward(test_inputs, cp.array(test_labels))
     ann_backward = mse.backward(test_inputs, cp.array(test_labels))
-    test_tensor = tf.convert_to_tensor(cp.asnumpy(test_inputs))
+    test_tensor = tf.convert_to_tensor(test_inputs.get())
 
     with tf.GradientTape() as tape:
         tape.watch(test_tensor)
-        tf_forward = tf.keras.losses.mse(test_labels, test_tensor)
+        tf_forward = tf.keras.losses.mse(test_labels.get(), test_tensor)
     tf_gradient = tape.gradient(tf_forward, test_tensor)
 
     tf_gradient = tf_gradient.numpy()
-    ann_backward = cp.asnumpy(ann_backward)
+    ann_backward = ann_backward.get()
     print(type(tf_gradient), type(ann_backward))
     print(tf_gradient - ann_backward)
-    print((tf_gradient - ann_backward)[cp.where((tf_gradient - ann_backward))])
+    print((tf_gradient - ann_backward)[np.where((tf_gradient - ann_backward))])
 
     assert cp.allclose(ann_backward, tf_gradient, atol=1e-3, rtol=1e-3)

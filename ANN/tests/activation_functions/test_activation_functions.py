@@ -24,7 +24,7 @@ def test_forward():
     for ann_activation, tf_activation in activation_pairs:
         test_inputs = rnd.standard_normal((10, 100))
         ann_forward = ann_activation().forward(cp.array(test_inputs))
-        tf_forward = tf_activation(tf.convert_to_tensor(test_inputs))
+        tf_forward = tf_activation(tf.convert_to_tensor(test_inputs.get()))
         assert cp.allclose(ann_forward, tf_forward)
 
 
@@ -34,7 +34,7 @@ def test_backward():
         activation = ann_activation()
         _ = activation.forward(cp.array(test_inputs))
         ann_backward = activation.backward(cp.ones((1, 100)))
-        tensor_inputs = tf.convert_to_tensor(test_inputs)
+        tensor_inputs = tf.convert_to_tensor(test_inputs.get())
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(tensor_inputs)
             tf_forward = tf_activation(tensor_inputs)

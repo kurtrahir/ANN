@@ -54,7 +54,7 @@ def test_dense_sgd():
                 weights.append(cp.asnumpy(layer.weights))
                 biases.append(cp.asnumpy(layer.bias))
 
-            test_tensor = tf.convert_to_tensor(test_inputs)
+            test_tensor = tf.convert_to_tensor(test_inputs.get())
 
             tf_model = tf.keras.Sequential(
                 [
@@ -93,7 +93,9 @@ def test_dense_sgd():
             )
             tf_x_grad = tape.gradient(tf_forward, test_tensor)
 
-            tf_model.fit(test_tensor, test_labels, epochs=1, batch_size=N_SAMPLES)
+            tf_model.fit(
+                test_tensor, cp.asnumpy(test_labels), epochs=1, batch_size=N_SAMPLES
+            )
             ann_model.train(
                 cp.array(test_inputs),
                 cp.array(test_labels),
@@ -107,6 +109,5 @@ def test_dense_sgd():
                 tf_weights, tf_biases = tf_layer.get_weights()
                 # Assert update was significant
                 assert not cp.allclose(weights[i], ann_layer.weights)
-                # Assert error less than .1%
-                assert cp.allclose(ann_layer.bias.get(), tf_biases)
-                assert cp.allclose(ann_layer.weights.get(), tf_weights)
+                assert cp.allclose(cp.asnumpy(ann_layer.bias), tf_biases)
+                assert cp.allclose(cp.asnumpy(ann_layer.weights), tf_weights)
