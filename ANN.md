@@ -30,7 +30,7 @@ Neural Networks are typically made up of one or more layers. They usually apply 
 ### __Densely connected layers__
 Densely connected layers are the most basic and widely used layers in the field of ANN.
 #### __Structure and function__
-They typically consist of a certain number of neurons, who all receive the same input and learn a linear transformation which is then passed through an activation function, allowing the network to learn non-linear relationships. Given input $\mathbf{I} = [I_0, I_1, ..., I_n]$ a neuron with weights $\mathbf{w}= \left [ \begin{matrix}w_0 \\ w_1 \\ ... \\ w_n \end{matrix} \right]$, bias $b$ and activation function $\sigma(x)$ will compute $\sigma(\mathbf{w} \cdot I + b)$.
+They typically consist of a certain number of neurons, who all receive the same input and learn a linear transformation which is then passed through an activation function. The activation function usually introduces some sort of non linearity, allowing the network to learn non-linear relationships. Given input $\mathbf{I} = [I_0, I_1, ..., I_n]$ a neuron with weights $\mathbf{w}= \left [ \begin{matrix}w_0 \\ w_1 \\ ... \\ w_n \end{matrix} \right]$, bias $b$ and activation function $\sigma(x)$ will compute $\sigma(\mathbf{w} \cdot I + b)$.
 
 A densely connected layer with S neurons can be expressed using a weight matrix W consisting of S weight vectors $\mathbf{W} = [\mathbf{w_0},\mathbf{w_1},...,\mathbf{w_n}] = \left [\begin{matrix} w_{00} & w_{10} & ... & w_{S0} \\ w_{01} & w_{11} & ... & w_{S1} \\ ...& ...& ...& ... \\ w_{0n} & w_{1n} & ... & w_{Sn} \end{matrix}\right ]$ and a bias vector $\mathbf{b} = [b_0,b_1,...,b_S]$
 
@@ -68,7 +68,7 @@ Let $a_{L-1}$ be the activation value of layer $L-1$. We have $a_{L-1} = \sigma(
 Continuing with the chain rule we can obtain the gradients with regards to the input layer's parameters.
 ${d\mathcal{L} \over d\mathbf{W}_{L-1}} = {d\mathcal{L}\over da_L} \cdot {da_L \over d\mathcal{z}_L} \cdot {d\mathcal{z}_L \over da_{L-1}} \cdot {{da_{L-1}} \over d\mathcal{z}_{L-1}} \cdot {d\mathcal{z}_{L-1} \over d\mathbf{W}_{L-1}}$ with the same being applicable to $\mathbf{b}_{L-1}$ and $\mathbf{I}$.
 
-This is extensible to a network with any number of layers L, simply backpropagate the gradient with regards to the input of a layer to the previous layer until the entire network has been traversed.
+This is extensible to a network with any number of layers $L$, simply backpropagate the gradient with regards to the input of a layer to the previous layer until the entire network has been traversed.
 
 We know ${d\mathcal{z} \over d\mathbf{W}} = I$ and ${d\mathcal{z} \over d\mathbf{b}} = 1$ for all layers.
 
@@ -78,9 +78,7 @@ The barebones implementation for the dense layer gradient caculation  is therefo
 
 ```
 def backward(gradient):
-    d_activation = self.activation.backward(
-        gradient
-    )
+    d_activation = self.activation.backward(gradient)
     self.d_bias = d_activation
     self.d_weights = cp.dot(
         self.inputs.T,
@@ -101,14 +99,32 @@ Convolutional layers aim to reduce the amount of parameters learned by sharing t
 
 These kernels are passed over the image computing the dot product between the kernel and the subregion (or receptive field) being considered.
 
-With input $\mathbf{I}$ of size $(x,y)$ and kernel $\mathbf{K}$ of size $(k_x,k_y)$, the output $\mathbf{O}$ of the convolutional layer at index $(i,j)$ is:
+With input $\mathbf{I}$ of size $(x,y)$ and kernel $\mathbf{K}$ of size $(k_x,k_y)$, the output $\mathbf{O}$ with dimensions $(x-k_x+1,y-k_y+1)$ of the convolutional layer at index $(i,j)$ is:
 
- $\mathbf{O}(i,j) = \sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m)\cdot \mathbf{K}(n,m)$, where $\mathbf{O}$ has dimensions $(x-2, y-2)$
+$$\mathbf{O}(i,j) = \sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m)\cdot \mathbf{K}(n,m)$$
 
- This is the case for a single channel image. If the input has several output channels, the kernel should have the same number of channels. For example for $c$ input channels, $I$ is now $(x,y,c)$ and $K$ is now $(k_x,k_y,c)$. The output becomes:
+This is the case for a single channel image. If the input has several output channels, the kernel should have the same number of channels. For example for $c$ input channels, $I$ is now $(x,y,c)$ and $K$ is now $(k_x,k_y,c)$. The output becomes:
 
-  $\mathbf{O}(i,j) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(n,m,l)$, where $\mathbf{O}$ has dimensions $(x-2, y-2)$
+$$\mathbf{O}(i,j) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(n,m,l)$$
 
-  Finally, each convolutional layer may have more than one kernel, causing the output to have several channels. For $p$ kernels, $K$ is now $(k_x, k_y, c, p)$ the output of the convolutional layers operation will be:
+Furthermore, each convolutional layer may have more than one kernel, causing the output to have several channels. For $p$ kernels, $K$ is now $(p, k_x, k_y, c)$ the output of the convolutional layers has dimensions $(x-k_x+1, y-k_y+1, p)$, and is:
 
-  $\mathbf{O}(i,j,h) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(n,m,l,h)$, where $\mathbf{O}$ has dimensions $(x-2, y-2, p)$.
+$$\mathbf{O}(i,j,h) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(h,n,m,l)$$
+
+To come back to the idea of parameters, if we consider the same example image, and instead of using 128 neurons, we learn 128 $(3\times 3)$ filters, we get $3\times 3 \times 3 \times 128 = 3456$ parameters, a much more manageable quantity.
+
+One more consideration for the convolutional layer's oepration is that the kernel may be slid over the input in different manners by changing the step size. A standard operation has a step size of 1 in both spatial dimensions $(1,1)$ but larger step sizes can reduce the overlap of the receptive fields and achieve further dimensionality reduction of the input. Let $s_x, s_y$ be the step size in the $x$ and $y$ dimensions respectively, the output now has dimensions $({x-k_x \over s_x} + 1, {y-k_y \over s_y} + 1, p)$
+
+$$\mathbf{O}(i,j,h) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i\times s_x+n,j\times s_y+m,l)\cdot \mathbf{K}(n,m,l,h)$$
+
+To compute this in an efficient manner, `cupy`'s `get_strided_view` was utilized. `cupy` arrays are stored in contiguous memory, and their structure is stored using strides. Typically, this means that adjacent elements in the first dimension are accessed by taking a stride of the size of the data type in being used, while accessing adjacent elements in the second dimension is achieved by taking a stride of the size of the data type multiplied by the size of the first dimension.
+
+To avoid iterating over each image when passing it through a convolutional layer, we can exploit `stride_tricks` to create an array conducive to a single operation. Notably an array of size $({x-k_x \over s_x} + 1,{y-k_y \over s_y} + 1,p,k,k,c)$. The first three dimensions correspond to the output size of the operation, while the last three dimensions correspond to the size of an individual kernel.
+
+Instead of creating an array of such size in memory, we change the strides to be taken to access the next element in each dimension. This allows us to have the same value exist in different indices of the array. Let $(m_x, m_y, m_z)$ be the stride size of the standard representation of the array in memory. To prepare for an efficient operation, we obtain a view with stride sizes: $(m_x \times s_z, m_y \times s_y, 0, m_x, m_y, m_z)$.
+Notable features of these strides:
+ - The first two dimensions stride in accordance with the step size of the operation.
+ - The third dimension does not stride at all: this has the effect that the array is in effect repeated $p$ times in this dimension. This is done as all $p$ kernels operate on the same input data.
+ - The last three dimensions are normal strides, as we want to access individual values.
+
+By performing the dot product over the last three dimensions of the view and the last three dimensions of the kernel we are now left exactly with the desired output
