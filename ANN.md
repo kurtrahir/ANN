@@ -38,7 +38,7 @@ This allows the activation of the dense layer to be expressed as: $a = \sigma(\m
 
 A barebones example of a dense layer is therefore:
 
-```
+```python
 class Dense(Layer):
     def __init__(self, weights, bias, activation):
         self.weights = weights
@@ -46,7 +46,7 @@ class Dense(Layer):
         self.activation = activation
         self.inputs = None
 
-    def forward(inputs):
+    def forward(self, inputs):
         self.inputs = inputs #store inputs for backwards pass
         return self.activation.forward(
             cp.dot(inputs, self.weights) + self.bias
@@ -76,8 +76,8 @@ If we provide the gradient to be propagated to the backwards method, we can writ
 
 The barebones implementation for the dense layer gradient caculation  is therefore:
 
-```
-def backward(gradient):
+```python
+def backward(self, gradient):
     d_activation = self.activation.backward(gradient)
     self.d_bias = d_activation
     self.d_weights = cp.dot(
@@ -99,11 +99,13 @@ Convolutional layers aim to reduce the amount of parameters learned by sharing t
 
 These kernels are passed over the image computing the dot product between the kernel and the subregion (or receptive field) being considered.
 
+#### __Structure and function__
+
 With input $\mathbf{I}$ of size $(x,y)$ and kernel $\mathbf{K}$ of size $(k_x,k_y)$, the output $\mathbf{O}$ with dimensions $(x-k_x+1,y-k_y+1)$ of the convolutional layer at index $(i,j)$ is:
 
 $$\mathbf{O}(i,j) = \sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m)\cdot \mathbf{K}(n,m)$$
 
-This is the case for a single channel image. If the input has several output channels, the kernel should have the same number of channels. For example for $c$ input channels, $I$ is now $(x,y,c)$ and $K$ is now $(k_x,k_y,c)$. The output becomes:
+This is technically the cross correlation ($\ast$) of the input and the kernel. These layers are called convolution for reasons that will become clear during the gradients discussion. This is the case for a single channel image. If the input has several output channels, the kernel should have the same number of channels. For example for $c$ input channels, $I$ is now $(x,y,c)$ and $K$ is now $(k_x,k_y,c)$. The output becomes:
 
 $$\mathbf{O}(i,j) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(n,m,l)$$
 
@@ -117,6 +119,10 @@ One more consideration for the convolutional layer's oepration is that the kerne
 
 $$\mathbf{O}(i,j,h) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i\times s_x+n,j\times s_y+m,l)\cdot \mathbf{K}(n,m,l,h)$$
 
+Finally, same as for the dense layers, convolutional layers have an activation function and a bias vector $\mathbf{b}=[b_0,b_1,...,b_p]$. This means that the output of a convolutional layer is.
+
+$$\mathbf{O}(i,j,h) = \sigma\left (\sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i\times s_x+n,j\times s_y+m,l)\cdot \mathbf{K}(n,m,l,h) + b_h\right )$$
+
 To compute this in an efficient manner, `cupy`'s `get_strided_view` was utilized. `cupy` arrays are stored in contiguous memory, and their structure is stored using strides. Typically, this means that adjacent elements in the first dimension are accessed by taking a stride of the size of the data type in being used, while accessing adjacent elements in the second dimension is achieved by taking a stride of the size of the data type multiplied by the size of the first dimension.
 
 To avoid iterating over each image when passing it through a convolutional layer, we can exploit `stride_tricks` to create an array conducive to a single operation. Notably an array of size $({x-k_x \over s_x} + 1,{y-k_y \over s_y} + 1,p,k,k,c)$. The first three dimensions correspond to the output size of the operation, while the last three dimensions correspond to the size of an individual kernel.
@@ -127,4 +133,193 @@ Notable features of these strides:
  - The third dimension does not stride at all: this has the effect that the array is in effect repeated $p$ times in this dimension. This is done as all $p$ kernels operate on the same input data.
  - The last three dimensions are normal strides, as we want to access individual values.
 
-By performing the dot product over the last three dimensions of the view and the last three dimensions of the kernel we are now left exactly with the desired output
+By performing the dot product over the last three dimensions of the view and the last three dimensions of the kernel we are now left exactly with the desired output.
+
+This is the barebones implementation of the strided dot product:
+
+```python
+import cupy as cp
+def corr_multi_in_out(inputs, kernels, step_size):
+    strided_input = cp.lib.stride_tricks.as_strided(
+        inputs,
+        shape=(
+            (inputs.shape[0] - kernels.shape[0]) / step_size[0] + 1,
+            (inputs.shape[1] - kernels.shape[1]) / step_size[1] + 1,
+            kernels.shape[0],
+            kernels.shape[1],
+            kernels.shape[2],
+            kernels.shape[3]
+        ),
+        strides=(
+            inputs.strides[0] * step_size[0],
+            inputs.strides[1] * step_size[1],
+            0,
+            inputs.strides[0],
+            inputs.strides[1],
+            inputs.strides[2],
+        )
+    )
+    return cp.einsum(
+        'ijklmn,klmn->ijk',
+        strided_input,
+        kernels
+    )
+```
+
+And this is therefore the barebones implementation of a convolutional layer:
+
+```python
+class Conv2D(Layer):
+    def __init__(self, weights, bias, activation, step_size):
+        self.weights = weights
+        self.bias = bias
+        self.activation = activation
+        self.step_size = step_size
+        self.inputs = None
+
+    def forward(self, inputs):
+        self.inputs = inputs
+        return self.activation.forward(
+            corr_multi_in_out(
+                inputs, self.weights, self.step_size
+            ) + self.bias
+        )
+```
+
+#### __Gradients__
+
+The funcamental idea of backpropagation applies to convolutional paramaters. To figure out the gradient with regards to the output, one needs to identify all the cells which were affected by each parameter.
+
+Consider a $(3\times 3)$ input image $I$ and a $(2\times2)$ kernel $K$, being correlated with a $(1,1)$ step size, with an added bias $b$.
+$$
+\mathbf{I} = \left[
+    \begin{matrix}
+        x_{00} & x_{01} & x_{02} \\
+        x_{10} & x_{11} & x_{12} \\
+        x_{20} & x_{21} & x_{22} \\
+    \end{matrix}
+\right ]
+\mathbf{K} =
+\left[
+    \begin{matrix}
+        k_{00} & k_{01} \\
+        k_{10} & k_{11} \\
+    \end{matrix}
+\right ]
+$$
+We will have a $(2\times2)$ output image $\mathbf{Z}$:
+$$
+\mathbf{Z} = \left[
+    \begin{matrix}
+        z_{00} & z_{01} \\
+        z_{10} & z_{11} \\
+    \end{matrix}
+\right ]
+$$
+
+The following is true:
+
+$$
+    z_{00} = x_{00}k_{00} + x_{01}k_{01} + x_{10}k_{10} + x_{11}k_{11} + b\newline
+    z_{01} = x_{01}k_{00} + x_{02}k_{01} + x_{11}k_{10} + x_{12}k_{11} + b\newline
+    z_{10} = x_{10}k_{00} + x_{11}k_{01} + x_{20}k_{10} + x_{21}k_{11} + b\newline
+    z_{11} = x_{11}k_{00} + x_{12}k_{01} + x_{21}k_{10} + x_{22}k_{11} + b\newline
+$$
+
+Let's look at ${d\mathbf{Z} \over d\mathbf{K}}$. We have
+
+$$
+    {d\mathbf{Z} \over d\mathbf{K}} =
+    \left [
+        \begin{matrix}
+            {dZ \over dk_{00}} & {dZ \over dk_{01}} \\
+            {dZ \over dk_{10}} & {dZ \over dk_{11}} \\
+        \end{matrix}
+    \right ]
+$$
+Where
+$$
+    {d\mathbf{Z} \over dk_{00}} =
+    \left [
+        \begin{matrix}
+            {dz_{00} \over dk_{00}} & {dz_{01} \over dk_{00}} \\
+            {dz_{10} \over dk_{00}} & {dz_{11} \over dk_{00}} \\
+        \end{matrix}
+    \right ] =
+    \left [
+        \begin{matrix}
+            x_{00} & x_{01} \\
+            x_{10} & x_{11} \\
+        \end{matrix}
+    \right ]
+$$
+
+And similarly:
+
+$$
+    {d\mathbf{Z} \over dk_{01}} =
+    \left [
+        \begin{matrix}
+            x_{01} & x_{02} \\
+            x_{11} & x_{12} \\
+        \end{matrix}
+    \right ]\text{, }{d\mathbf{Z} \over dk_{10}} =
+    \left [
+        \begin{matrix}
+            x_{10} & x_{11} \\
+            x_{20} & x_{21} \\
+        \end{matrix}
+    \right ] \text{, } {d\mathbf{Z} \over dk_{11}} =
+    \left [
+        \begin{matrix}
+            x_{11} & x_{12} \\
+            x_{21} & x_{22} \\
+        \end{matrix}
+    \right ]
+$$.
+
+The derivative of the output $\mathbf{O}$ with regards to $Z$ will have the shape of the output $(2\times 2)$, and the total influence of each individual kernel component can be obtained by summing over the gradient matrix. And so we see that to obtain the loss gradients for $\mathbf{K}$, it is a correlation operation:
+
+$$
+    {d\mathcal{L} \over d\mathbf{K}} = {d\mathcal{L} \over d\mathbf{Z}} \cdot {d\mathbf{Z} \over d\mathbf{K}} = \mathbf{I} \ast {d\mathcal{L} \over d\mathbf{Z}}
+$$
+
+When lookin at the bias we see that ${d\mathbf{Z} \over db} = \left [ \begin{matrix} 1 & 1 \\ 1 & 1 \\ \end{matrix} \right ]$ and so:
+
+$$
+    {d\mathcal{L} \over db} = {d\mathcal{L} \over d\mathbf{Z}} \cdot  {d\mathbf{Z} \over db} = {d\mathcal{L} \over d\mathbf{Z}}
+$$
+
+And finally, to be able to backpropagate to eventual earlier convolutional layers, let's look at ${d\mathbf{Z} \over d\mathbf{I}}$.
+We have:
+$$
+    {d\mathbf{Z} \over d\mathbf{I}} =
+    \left [
+        \begin{matrix}
+            {d\mathbf{Z} \over dx_{00}} & {d\mathbf{Z} \over dx_{01}} & {d\mathbf{Z} \over dx_{02}} \\
+            {d\mathbf{Z} \over dx_{10}} & {d\mathbf{Z} \over dx_{11}} & {d\mathbf{Z} \over dx_{12}} \\
+            {d\mathbf{Z} \over dx_{20}} & {d\mathbf{Z} \over dx_{21}} & {d\mathbf{Z} \over dx_{22}} \\
+        \end{matrix}
+    \right ]
+$$
+
+Where the corner components of the image are each only affected by a single kernel term:
+$$
+    {d\mathbf{Z} \over dx_{00}} = k_{00} \text{, }
+    {d\mathbf{Z} \over dx_{02}} = k_{01} \text{, }
+    {d\mathbf{Z} \over dx_{20}} = k_{10} \text{, }
+    {d\mathbf{Z} \over dx_{22}} = k_{11}
+$$
+The middle components of the edges are affected by two kernel terms:
+$$
+    {d\mathbf{Z} \over dx_{01}} = k_{01} + k_{00}\text{, }
+    {d\mathbf{Z} \over dx_{10}} = k_{10} + k_{00} \text{, }
+    {d\mathbf{Z} \over dx_{12}} = k_{11} + k_{01} \text{, }
+    {d\mathbf{Z} \over dx_{21}} = k_{11} + k_{10}
+$$
+And the center component is affected by all kernel terms:
+$$
+    {d\mathbf{Z} \over dx_{11}} = k_{00} + k_{01} + k_{10} + k_{11}
+$$
+
+To obtain this effect, we rotate the kernel and pad ${d\mathcal{L} \over d\mathbf{Z}}$
