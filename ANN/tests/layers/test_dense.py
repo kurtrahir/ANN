@@ -31,7 +31,7 @@ def test_forward():
 
 def test_backward():
     # test input generation
-    test_inputs = rnd.standard_normal((100, 100))
+    test_inputs = rnd.standard_normal((100, 100), dtype=cp.float32)
     # Declare and initialize Dense layer
     ann_layer = Dense(64, activation=ReLu(), input_shape=test_inputs.shape)
 
@@ -41,7 +41,7 @@ def test_backward():
 
     # Declare and initialize tf reference dense layer
     tf_layer = tf.keras.layers.Dense(64, activation="relu")
-    test_tensor = tf.convert_to_tensor(test_inputs.get())
+    test_tensor = tf.convert_to_tensor(test_inputs.get(), dtype=tf.float32)
     tf_forward = tf_layer(test_tensor)
     tf_layer.set_weights(weights=[weights.get(), bias.get()])
 
@@ -80,14 +80,14 @@ def test_loss_propagation_mse():
         )
         tf_layer = tf.keras.layers.Dense(N_NEURONS, activation=tf_activation)
 
-        sample_input = rnd.standard_normal((N_SAMPLES, N_FEATURES))
-        sample_label = rnd.standard_normal((N_SAMPLES, N_NEURONS))
+        sample_input = rnd.standard_normal((N_SAMPLES, N_FEATURES), dtype=cp.float32)
+        sample_label = rnd.standard_normal((N_SAMPLES, N_NEURONS), dtype=cp.float32)
 
         ann_input = sample_input
         ann_label = sample_label
 
-        tf_input = tf.convert_to_tensor(cp.asnumpy(sample_input))
-        tf_label = tf.convert_to_tensor(cp.asnumpy(sample_label))
+        tf_input = tf.convert_to_tensor(cp.asnumpy(sample_input), dtype=tf.float32)
+        tf_label = tf.convert_to_tensor(cp.asnumpy(sample_label), dtype=tf.float32)
 
         _ = tf_layer(tf_input)
 
@@ -129,7 +129,7 @@ def test_loss_propagation_cross_entropy():
         )
         tf_layer = tf.keras.layers.Dense(N_NEURONS, activation=tf_activation)
 
-        sample_input = rnd.standard_normal((N_SAMPLES, N_FEATURES))
+        sample_input = rnd.standard_normal((N_SAMPLES, N_FEATURES), dtype=cp.float32)
         classes = rnd.integers(0, N_NEURONS, (N_SAMPLES, 1))
         sample_label = cp.zeros((N_SAMPLES, N_NEURONS), dtype=cp.float32)
         for i in range(N_SAMPLES):
@@ -138,8 +138,8 @@ def test_loss_propagation_cross_entropy():
         ann_input = sample_input
         ann_label = sample_label
 
-        tf_input = tf.convert_to_tensor(cp.asnumpy(sample_input))
-        tf_label = tf.convert_to_tensor(cp.asnumpy(sample_label))
+        tf_input = tf.convert_to_tensor(cp.asnumpy(sample_input), dtype=tf.float32)
+        tf_label = tf.convert_to_tensor(cp.asnumpy(sample_label), dtype=tf.float32)
 
         _ = tf_layer(tf_input)
 

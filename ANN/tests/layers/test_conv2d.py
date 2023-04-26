@@ -13,7 +13,7 @@ rnd = cp.random.default_rng()
 
 def test_forward():
     for padding in ["valid", "same"]:
-        test_inputs = rnd.standard_normal((1, 28, 28, 3))
+        test_inputs = rnd.standard_normal((32, 28, 28, 3), dtype=cp.float32)
         ann_layer = Conv2D(
             n_filters=64,
             kernel_shape=(3, 3),
@@ -27,7 +27,7 @@ def test_forward():
         tf_layer = tf.keras.layers.Conv2D(
             64, kernel_size=(3, 3), activation="linear", padding=padding
         )
-        test_tensor = tf.convert_to_tensor(test_inputs.get())
+        test_tensor = tf.convert_to_tensor(test_inputs.get(), dtype=tf.float32)
         tf_forward = tf_layer(test_tensor)
         tf_layer.set_weights(weights=[weights, bias])
         tf_forward = tf_layer(test_tensor)
@@ -44,7 +44,7 @@ def test_backward():
     ]:
         for padding in ["valid", "same"]:
             print(padding)
-            test_inputs = rnd.standard_normal((8, 28, 28, 3))
+            test_inputs = rnd.standard_normal((32, 28, 28, 3), dtype=cp.float32)
             ann_layer = Conv2D(
                 n_filters=4,
                 kernel_shape=(3, 3),
@@ -58,7 +58,7 @@ def test_backward():
             tf_layer = tf.keras.layers.Conv2D(
                 4, kernel_size=(3, 3), activation=t_a, padding=padding
             )
-            test_tensor = tf.convert_to_tensor(test_inputs.get())
+            test_tensor = tf.convert_to_tensor(test_inputs.get(), dtype=tf.float32)
             tf_forward = tf_layer(test_tensor)
             tf_layer.set_weights(weights=[weights, bias])
             with tf.GradientTape(persistent=True) as tape:
@@ -69,8 +69,8 @@ def test_backward():
                 tf_layer.trainable_variables,
             )
             tf_x_grad = tape.gradient(tf_forward, test_tensor)
-            ann_forward = ann_layer.forward(cp.array(test_inputs))
-            ann_backward = ann_layer.backward(cp.ones((1, 1, 1, 1)))
+            ann_forward = ann_layer.forward(test_inputs)
+            ann_backward = ann_layer.backward(cp.ones((32, 1, 1, 1)))
 
             assert ann_forward.shape == tf_forward.shape
             assert cp.allclose(

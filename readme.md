@@ -109,28 +109,28 @@ This is technically the cross correlation ($\ast$) of the input and the kernel. 
 
 $$\mathbf{O}(i,j) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(n,m,l)$$
 
-Furthermore, each convolutional layer may have more than one kernel, causing the output to have several channels. For $p$ kernels, $K$ is now $(p, k_x, k_y, c)$ the output of the convolutional layers has dimensions $(x-k_x+1, y-k_y+1, p)$, and is:
+Furthermore, each convolutional layer may have more than one kernel, causing the output to have several channels. For $f$ kernels, $K$ is now $(f, k_x, k_y, c)$ the output of the convolutional layers has dimensions $(x-k_x+1, y-k_y+1, f)$, and is:
 
 $$\mathbf{O}(i,j,h) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(h,n,m,l)$$
 
 To come back to the idea of parameters, if we consider the same example image, and instead of using 128 neurons, we learn 128 $(3\times 3)$ filters, we get $3\times 3 \times 3 \times 128 = 3456$ parameters, a much more manageable quantity.
 
-One more consideration for the convolutional layer's oepration is that the kernel may be slid over the input in different manners by changing the step size. A standard operation has a step size of 1 in both spatial dimensions $(1,1)$ but larger step sizes can reduce the overlap of the receptive fields and achieve further dimensionality reduction of the input. Let $s_x, s_y$ be the step size in the $x$ and $y$ dimensions respectively, the output now has dimensions $({x-k_x \over s_x} + 1, {y-k_y \over s_y} + 1, p)$
+One more consideration for the convolutional layer's oepration is that the kernel may be slid over the input in different manners by changing the step size. A standard operation has a step size of 1 in both spatial dimensions $(1,1)$ but larger step sizes can reduce the overlap of the receptive fields and achieve further dimensionality reduction of the input. Let $s_x, s_y$ be the step size in the $x$ and $y$ dimensions respectively, the output now has dimensions $({x-k_x \over s_x} + 1, {y-k_y \over s_y} + 1, f)$
 
 $$\mathbf{O}(i,j,h) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i\times s_x+n,j\times s_y+m,l)\cdot \mathbf{K}(n,m,l,h)$$
 
-Finally, same as for the dense layers, convolutional layers have an activation function and a bias vector $\mathbf{b}=[b_0,b_1,...,b_p]$. This means that the output of a convolutional layer is.
+Finally, same as for the dense layers, convolutional layers have an activation function and a bias vector $\mathbf{b}=[b_0,b_1,...,b_f]$. This means that the output of a convolutional layer is.
 
 $$\mathbf{O}(i,j,h) = \sigma\left (\sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i\times s_x+n,j\times s_y+m,l)\cdot \mathbf{K}(n,m,l,h) + b_h\right )$$
 
 To compute this in an efficient manner, `cupy`'s `get_strided_view` was utilized. `cupy` arrays are stored in contiguous memory, and their structure is stored using strides. Typically, this means that adjacent elements in the first dimension are accessed by taking a stride of the size of the data type in being used, while accessing adjacent elements in the second dimension is achieved by taking a stride of the size of the data type multiplied by the size of the first dimension.
 
-To avoid iterating over each image when passing it through a convolutional layer, we can exploit `stride_tricks` to create an array conducive to a single operation. Notably an array of size $({x-k_x \over s_x} + 1,{y-k_y \over s_y} + 1,p,k,k,c)$. The first three dimensions correspond to the output size of the operation, while the last three dimensions correspond to the size of an individual kernel.
+To avoid iterating over each image when passing it through a convolutional layer, we can exploit `stride_tricks` to create an array conducive to a single operation. Notably an array of size $({x-k_x \over s_x} + 1,{y-k_y \over s_y} + 1,f,k,k,c)$. The first three dimensions correspond to the output size of the operation, while the last three dimensions correspond to the size of an individual kernel.
 
 Instead of creating an array of such size in memory, we change the strides to be taken to access the next element in each dimension. This allows us to have the same value exist in different indices of the array. Let $(m_x, m_y, m_z)$ be the stride size of the standard representation of the array in memory. To prepare for an efficient operation, we obtain a view with stride sizes: $(m_x \times s_z, m_y \times s_y, 0, m_x, m_y, m_z)$.
 Notable features of these strides:
  - The first two dimensions stride in accordance with the step size of the operation.
- - The third dimension does not stride at all: this has the effect that the array is in effect repeated $p$ times in this dimension. This is done as all $p$ kernels operate on the same input data.
+ - The third dimension does not stride at all: this has the effect that the array is in effect repeated $f$ times in this dimension. This is done as all $p$ kernels operate on the same input data.
  - The last three dimensions are normal strides, as we want to access individual values.
 
 By performing the dot product over the last three dimensions of the view and the last three dimensions of the kernel we are now left exactly with the desired output.
@@ -322,4 +322,220 @@ $$
     {d\mathbf{Z} \over dx_{11}} = k_{00} + k_{01} + k_{10} + k_{11}
 $$
 
-To obtain this effect, we rotate the kernel and pad ${d\mathcal{L} \over d\mathbf{Z}}$
+This is equivalent to padding the loss gradient by $k_x - 1, k_y -1$, and rotating the kernel by 180 degrees before performing a correlation operation. This is where the name for the "convolutional" layer comes from, as performing the correlation with an inverted kernel is equivalent to performing a convolution operation.
+
+##### _Padding_
+The padding of images may be done in the forward pass as well, as it is a way to control the output shape of the convolutional layer. Typically, this is done with zeros, and symetrically. Consider padding amount $p_x, p_y$. The output shape for the convolution operation with padding becomes: $({x-k_x+2p_x \over s_x} + 1,{y-k_y+2p_y \over s_y} + 1,f,k,k,c)$
+
+#### _Step size_
+
+One final consideration is the step size setting. This modifies the number of elements the kernel is shifted by at each step. The expression for the gradients above assumed a step size of 1 in both spatial dimensions, however this is not necessarily the case.
+
+
+Consider a $(4\times 4)$ input image $I$ and a $(2\times2)$ kernel $K$, being correlated with a $(2,2)$ step size, with an added bias $b$.
+
+To obtain the weight gradients, a correlation operation with the same step size as in the forward pass is still appropriate.
+
+$$
+    {d\mathcal{L} \over d\mathbf{K}} = {d\mathcal{L} \over d\mathbf{Z}} \cdot {d\mathbf{Z} \over d\mathbf{K}} = \mathbf{I} \ast_{s_x,s_y} {d\mathcal{L} \over d\mathbf{Z}}
+$$
+
+
+However we must consider the input gradients anew.
+
+We have:
+$$
+    {d\mathbf{Z} \over d\mathbf{I}} =
+    \left [
+        \begin{matrix}
+            {d\mathbf{Z} \over dx_{00}} & {d\mathbf{Z} \over dx_{01}} & {d\mathbf{Z} \over dx_{02}} & {d\mathbf{Z} \over dx_{03}}\\
+            {d\mathbf{Z} \over dx_{10}} & {d\mathbf{Z} \over dx_{11}} & {d\mathbf{Z} \over dx_{12}} & {d\mathbf{Z} \over dx_{13}}\\
+            {d\mathbf{Z} \over dx_{20}} & {d\mathbf{Z} \over dx_{21}} & {d\mathbf{Z} \over dx_{22}} & {d\mathbf{Z} \over dx_{23}}\\
+            {d\mathbf{Z} \over dx_{30}} & {d\mathbf{Z} \over dx_{31}} & {d\mathbf{Z} \over dx_{32}} & {d\mathbf{Z} \over dx_{33}}\\
+        \end{matrix}
+    \right ]
+$$
+
+Where each component of the image is only affected by a single kernel term:
+$$
+    {d\mathbf{Z} \over dx_{00}} = {d\mathbf{Z} \over dx_{02}} = {d\mathbf{Z} \over dx_{20}} = {d\mathbf{Z} \over dx_{22}} = k_{00} \\
+
+    {d\mathbf{Z} \over dx_{01}} ={d\mathbf{Z} \over dx_{03}} ={d\mathbf{Z} \over dx_{21}} =  {d\mathbf{Z} \over dx_{23}} = k_{01} \\
+    {d\mathbf{Z} \over dx_{10}} = {d\mathbf{Z} \over dx_{12}} =  {d\mathbf{Z} \over dx_{30}} = {d\mathbf{Z} \over dx_{32}} = k_{10} \\
+    {d\mathbf{Z} \over dx_{11}} = {d\mathbf{Z} \over dx_{13}} = {d\mathbf{Z} \over dx_{31}} = {d\mathbf{Z} \over dx_{33}} = k_{11} \\
+$$
+
+This can be achieved by _dilating_ the loss gradient by $k_x-1, k_y-1$ before padding it and convolvng with the kernel using the same step size as in the forward pass.
+
+The dilation inserts empty rows and columns between each row and column of the existing matrix.
+
+The barebones implementation of the backward pass is therefore:
+
+```python
+
+def backward(self, gradient):
+
+    # Get activation function gradient
+    self.activation_function.activations = self.activation_function.backward(
+        gradient
+    )
+
+    # Get bias gradient
+    self.d_bias = cp.sum(self.activation_function.activations, axis=(0, 1, 2))
+
+    # Dilate activation gradient
+    if self.step_size != (1, 1):
+        self.activation_function.activations = dilate(
+            self.activation_function.activations, self.step_size
+        )
+
+    # inputs is s,x,y,c and activations is s,x,y,f
+    # we want output shape f,x,y,c
+    # so we correlate in shape c,y,x,s and f,y,x,s
+    # obtain c,y,x,f and transpose again.
+    self.d_weights = corr2d_multi_in_out(
+        self.inputs.T, self.activation_function.activations.T, (1, 1)
+    ).T
+
+    # Rotate Kernel.
+    rot_weights = cp.rot90(self.weights, 2, (1, 2))
+
+    # Pad activation gradients
+    self.activation_function.activations = pad(
+            self.activation_function.activations,
+            self.kernel_shape,
+            self.step_size,
+            "full",
+        )
+
+    # get input gradients.
+    input_gradient = corr2d_multi_in_out(
+        self.activation_function.activations, cp.swapaxes(rot_weights, 3, 0), (1, 1)
+    )
+    # undo any shape transformation done to the input after reception.
+    return unpad(input_gradient, self.kernel_shape, self.input_shape, self.padding)
+
+
+```
+
+## Activation Functions
+
+Two activation functions were required for the task at hand, the recitified linear unit (ReLu) for the hidden layers, and the softmax unit for the classification or output layer.
+
+### ReLu
+
+The ReLu unit is very simple:
+
+$$
+    ReLu(x) = \begin{cases} x \text{ where } x>0\\ 0 \text{ where } x\leq 0 \end{cases}
+$$
+
+Making its derivative with regards to it's input:
+$$
+    {dReLu(x) \over dx} = \begin{cases} 1 \text{ where } ReLu(x)>0\\ 0 \text{ where } ReLu(x) = 0 \end{cases}
+$$
+
+Barebones implementation is:
+
+```python
+
+class ReLu(Activation):
+
+    def __init__(self):
+        self.activations = None
+
+    def forward(self, x):
+        self.activations = cp.where(x > 0, x, 0)
+        return self.activations
+
+    def backward(self, partial_loss_derivative):
+        local_gradient = (self.activations > 0).astype(int)
+        return local_gradient * partial_loss_derivative
+
+```
+
+### Softmax
+
+The softmax function $S(x)$ is used to squish all of it's inputs into the range of $[0-1]$, with their sum being equal to 1.
+
+This is done by transforming the input vector taking the exponential of the inputs, and dividing each vector component by their sum.
+
+$$
+    S(\mathbf{x}) = {e^{\mathbf{x}} \over \sum_{i=0}^ne^{x_i}}
+$$
+
+To obtain it's derivative, we apply the logarithmic derivative rule:
+
+$$
+{\delta \log{(S(z_i))} \over \delta z_j} =  {1 \over S(z_i)} \cdot {\delta S(z_i) \over \delta z_j}
+$$
+
+We have:
+
+$$
+    \log (S(z_i)) = \log \left( {e^{z_i} \over \sum_{h=0}^ne^{z_h}}\right) = z_i-\log\left(\sum_{h=0}^ne^{z_h}\right)
+$$
+
+This yields:
+
+$$
+{\delta \log{(S(z_i))}\over \delta z_j} = \begin{cases}
+    1 - {e^{z_j} \over \sum_{h=0}^ne^{z_h}} \text{ where i = j} \\
+    - {e^{z_j} \over \sum_{h=0}^ne^{z_h}} \text{ otherwise }
+\end{cases}
+$$
+
+Which is equivalent to:
+
+$$
+{\delta \log{(S(z_i))}\over \delta z_j} = \begin{cases}
+    1 - S(z_j) \text{ where i = j} \\
+    - S(z_j) \text{ otherwise }
+\end{cases}
+$$
+
+And finally we get:
+
+$$
+{\delta {(S(z_i))}\over \delta z_j} = \begin{cases}
+    (1 - S(z_j)) \cdot S(z_i) \text{ where i = j} \\
+    - S(z_j) \cdot S(z_i) \text{ otherwise }
+\end{cases}
+$$
+
+So the backward pass of the softmax implementation is this:
+
+```python
+    def backward(self, partial_loss_gradient):
+
+        jacobians = cp.empty((
+            self.activations.shape[0]
+            self.activations.shape[1],
+            self.activations.shape[1]
+        ))
+
+        for i in range(jacobians.shape[0]):
+            jacobians[i] = cp.diag(self.activations[i]) - cp.outer(
+                self.activations, self.activations
+            )
+
+        return cp.einsum(
+            'ijk,ik->ij', jacobians, partial_loss_gradient
+        )
+```
+
+### Loss function
+
+#### _Cross Entropy_
+
+For classification tasks, cross entropy loss is required.
+
+Cross entropy loss is usually defined as:
+
+$$
+    CE(\mathbf{p}) = - \sum_{i = 1}^n t_i \log (p_i)
+$$
+
+Where $\mathbf{p}$ is the prediction vector giving probalities for $n$ classes, and $\mathbf{t}$ is the vector containing the true classes.
+
+Given our categorical cross-entropy use case (only one of the $n$ classes is ever active in each sample), we see that the predicted probabilities of the inactive classes will not have an impact on the pr

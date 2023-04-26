@@ -168,26 +168,23 @@ class Conv2D(Layer):
             propagation.
         """
         # Get activation function gradient
-        self.activation_function.activations = self.activation_function.backward(
-            gradient
-        )
+        gradient = self.activation_function.backward(gradient)
 
         # Get bias gradient
-        self.d_bias = cp.sum(self.activation_function.activations, axis=(0, 1, 2))
+        self.d_bias = cp.sum(gradient, axis=(0, 1, 2))
 
         # Dilate activation gradient
         if self.step_size != (1, 1):
-            self.activation_function.activations = dilate(
-                self.activation_function.activations, self.step_size
-            )
+            gradient = dilate(gradient, self.step_size)
 
         # Rotate Kernel
         rot_weights = cp.rot90(self.weights, 2, (1, 2))
 
-        # for channel in range(self.d_weights.shape[-1]):
-        self.d_weights = corr2d_multi_in_out(
-            self.inputs.T, self.activation_function.activations.T, (1, 1)
-        ).T
+        # inputs is s,x,y,c and activations is s,x,y,f
+        # we want output shape f,x,y,c
+        # so we correlate in shape c,y,x,s and f,y,x,s
+        # obtain c,y,x,f and transpose again.
+        self.d_weights = corr2d_multi_in_out(self.inputs.T, gradient.T, (1, 1)).T
 
         if self.l1 is not None:
             self.d_weights[self.weights > 0] += self.l1
@@ -196,24 +193,15 @@ class Conv2D(Layer):
             self.d_weights -= self.l2 * self.weights
             self.d_bias -= self.l2 * self.bias
 
-        if self.step_size != (1, 1):
-            pad_w = self.kernel_shape[0] - 1
-            pad_h = self.kernel_shape[1] - 1
-            self.activation_function.activations = cp.pad(
-                self.activation_function.activations,
-                [[0, 0], [pad_w, pad_w], [pad_h, pad_h], [0, 0]],
-                "constant",
-            )
-        else:
-            self.activation_function.activations = pad(
-                self.activation_function.activations,
-                self.kernel_shape,
-                self.step_size,
-                "full",
-            )
+        gradient = pad(
+            gradient,
+            self.kernel_shape,
+            self.step_size,
+            "full",
+        )
 
         input_gradient = corr2d_multi_in_out(
-            self.activation_function.activations, cp.swapaxes(rot_weights, 3, 0), (1, 1)
+            gradient, cp.swapaxes(rot_weights, 3, 0), (1, 1)
         )
 
         return unpad(input_gradient, self.kernel_shape, self.input_shape, self.padding)

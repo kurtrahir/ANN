@@ -33,7 +33,7 @@ def test_dense_sgd():
             N_SAMPLES = 10
             N_FEATURES = 10
             LEARNING_RATE = 1
-            test_inputs = rnd.standard_normal((N_SAMPLES, N_FEATURES))
+            test_inputs = rnd.standard_normal((N_SAMPLES, N_FEATURES), dtype=cp.float32)
             test_labels = cp.log(cp.abs(cp.sum(test_inputs, axis=-1, keepdims=True)))
             optimizer = SGD(learning_rate=LEARNING_RATE, loss=ann_loss)
 
@@ -54,7 +54,7 @@ def test_dense_sgd():
                 weights.append(cp.asnumpy(layer.weights))
                 biases.append(cp.asnumpy(layer.bias))
 
-            test_tensor = tf.convert_to_tensor(test_inputs.get())
+            test_tensor = tf.convert_to_tensor(test_inputs.get(), dtype=tf.float32)
 
             tf_model = tf.keras.Sequential(
                 [

@@ -37,7 +37,7 @@ def test_dense_adam():
             BETA_1 = 0.5
             BETA_2 = 0.5
             EPSILON = 1e-7
-            test_inputs = rnd.standard_normal((N_SAMPLES, N_FEATURES))
+            test_inputs = rnd.standard_normal((N_SAMPLES, N_FEATURES), dtype=cp.float32)
             test_labels = cp.log(cp.abs(cp.sum(test_inputs, axis=-1, keepdims=True)))
             optimizer = Adam(
                 learning_rate=LEARNING_RATE,
@@ -64,7 +64,9 @@ def test_dense_adam():
                 weights.append(cp.asnumpy(layer.weights))
                 biases.append(cp.asnumpy(layer.bias))
 
-            test_tensor = tf.convert_to_tensor(cp.asnumpy(test_inputs))
+            test_tensor = tf.convert_to_tensor(
+                cp.asnumpy(test_inputs), dtype=tf.float32
+            )
 
             tf_model = tf.keras.Sequential(
                 [
