@@ -530,12 +530,151 @@ So the backward pass of the softmax implementation is this:
 
 For classification tasks, cross entropy loss is required.
 
-Cross entropy loss is usually defined as:
+Cross entropy loss can be defined as:
 
 $$
-    CE(\mathbf{p}) = - \sum_{i = 1}^n t_i \log (p_i)
+    CE(\mathbf{p}) = - \sum_{i = 1}^n t_i \log ({p_i \over \sum_{j=0}^np_j})
 $$
 
 Where $\mathbf{p}$ is the prediction vector giving probalities for $n$ classes, and $\mathbf{t}$ is the vector containing the true classes.
 
-Given our categorical cross-entropy use case (only one of the $n$ classes is ever active in each sample), we see that the predicted probabilities of the inactive classes will not have an impact on the pr
+Let's find the derivative $$.
+
+We have:
+$$
+    {\delta ({p_i \over \sum_{j=0}^np_j} ) \over \delta p_x} =
+    \begin{cases}
+        {\sum_{j=0}^np_j - p_i \over (\sum_{j=0}^np_j)²} \text{ where }i = x \\
+
+        {-p_i \over (\sum_{j=0}^np_j)²} \text{ otherwise}\\
+
+    \end{cases}
+$$
+
+Which means:
+
+$$
+{\delta (\log ({p_i \over \sum_{j=0}^np_j})) \over \delta p_x} =
+    \begin{cases}
+        {\sum_{j=0}^np_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
+
+        {-1 \over \sum_{j=0}^np_j} \text{ otherwise}\\
+
+    \end{cases}
+$$
+
+And:
+
+$$
+{\delta CE(\mathbf{p})  \over \delta p_x} =
+\begin{cases}
+    - \sum_{i = 0}^n t_i \cdot {\sum_{j=0}^np_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
+
+    - \sum_{i = 0}^n t_i \cdot {-1 \over \sum_{j=0}^np_j} \text{ otherwise}\\
+
+\end{cases}
+$$
+
+For each target value vector $\mathbf{t}$ there is only one non-zero value $t_{true} = 1$.
+
+We get finally:
+
+$$
+    {\delta CE(\mathbf{p})  \over \delta p_x} =
+    \begin{cases}
+        {\sum_{j=0}^np_j - p_{true} \over  p_{true} \cdot \sum_{j=0}^np_j} \text{ where }x = true \\
+        {1 \over \sum_{j=0}^np_j} \text{ otherwise}
+    \end{cases}
+$$
+
+An implementation for the CrossEntropy loss function therefore looks like this:
+
+```python
+    def CrossEntropy(Loss):
+        def __init__(self):
+            Loss.__init__(self)
+
+    def forward(self, pred, true):
+        return cp.sum(
+            -true * cp.log(pred / cp.sum(pred, axis=-1, keepdims=True)), axis=1
+        )
+
+    def backward(self, pred, true):
+        # Get inverted vector (=1 for all wrong classes)
+        inverted = cp.abs(true - 1)
+        # Get p_true (prediction value for correct class)
+        p_true = cp.sum(pred * true, axis=-1, keepdims=True)
+        # Get sum of all predictions
+        p_sum = cp.sum(pred, axis=-1, keepdims=True)
+        # Get sum of predictions for wrong classes
+        p_zeroes = cp.sum(
+            inverted * pred, axis=-1, keepdims=True
+        )
+        # result is vector = 1/p_sum where true = 0
+        # and = p_zeroes/(p_true * p_sum) where true = 1
+        return inverted / p_sum - true * p_zeroes / (p_true * p_sum)
+```
+
+### Optimizers
+
+#### _Stochastic Gradient Descent_
+
+While backpropagation is the way we obtain gradients for all layers in the network, the optimizer dictates the way in which we make use of them for updating the weights.
+
+Stochastic gradient descent (SGD) is a basic algorithm. The update rule for the weights is simply:
+
+$$
+    \mathbf{w}_{i+1} = \mathbf{w}_{i} - \mu {\delta Loss \over \delta \mathbf{w}_i}
+$$
+
+Where $\mathbf{w}_{x}$ are the weights at optimization step $x$, and $\mu$ is the learning rate, typically between 0 and 1.
+
+In my implementation, the layers set their gradients during their backward pass.
+
+This means an SGD implementation in this context could look like this:
+```python
+class SGD(Optimizer):
+
+    def __init__(self, loss, learning_rate):
+        self.learning_rate = learning_rate
+        Optimizer.__init__(self, loss=loss)
+
+    def backward(
+        self, model, inputs, targets
+    ):
+        # forward pass
+        outputs = model.forward(inputs)
+        # get loss gradient with regards to network output
+        d_loss = self.loss.backward(outputs, targets)
+        # backpropagate
+        for layer in model.layers[::-1]:
+            d_loss = layer.backward(d_loss)
+
+        # update weights
+        for layer in model.layers:
+            if layer.has_weights:
+                layer.weights -= self.learning_rate * layer.gradients
+            if layer.has_bias:
+                layer.bias -= self.learning_rate * layer.d_bias
+
+        # return loss value
+        return self.loss.forward(outputs, targets)
+```
+
+#### _Adaptive Moment Estimation Optimizer_
+
+The adaptive moments estimates [(Adam)](https://arxiv.org/pdf/1412.6980) algorithm estimates and tracks the gradient's first order and raw second order estimates, this allows it to take steps down a gradient that more closely estimates the tasks' gradients with regards to the weights.
+
+The paper discusses the algorithm and implementation in sufficient detail to avoid reproduction here.
+
+#### _Batch Normalization_
+
+[Batch normalization](https://arxiv.org/pdf/1502.03167) is a technique that has been found to accelerate training. It standardizes the activations to zero mean and unit variance of layers by keeping a running mean and variance.
+
+#### _Max Pooling_
+
+Max Pooling layers enable dimensionality reductions on 2D activations (typically convolutional layers). This is done by passing on only the largest value of the designated "pool".
+
+#### _Data Augmentation_
+
+Data augmentation on images can be done by rotating the images, shifting them and zooming. Implementations for these functionalities exist in cupy.
