@@ -223,6 +223,7 @@ $$
 The following is true:
 
 $$
+\displaylines{
     z_{00} = x_{00}k_{00}
            + x_{01}k_{01}
            + x_{10}k_{10}
@@ -243,6 +244,7 @@ $$
            + x_{21}k_{10}
            + x_{22}k_{11}
            + b \\
+}
 $$
 
 Let's look at ${d\mathbf{Z} \over d\mathbf{K}}$. We have
