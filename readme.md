@@ -564,7 +564,7 @@ $$
 We have:
 
 $$
-    \log (S(z_i)) = \log \left( {e^{z_i} \over \sum_{h=0}^{n}e^{z_h}}\right) = z_i-\log\left(\sum_{h=0}^ne^{z_h}\right)
+    \log (S(z_i)) = \log \left( {e^{z_i} \over \sum_h e^{z_h}}\right) = z_i-\log\left(\sum_{h=0}^ne^{z_h}\right)
 $$
 
 This yields:
@@ -572,8 +572,8 @@ This yields:
 $$
     {d \log{(S(z_i))}\over d z_j} =
     \begin{cases}
-        1 - {e^{z_j} \over \sum_{h=0}^{n}e^{z_h}} \text{ where i = j} \\
-        - {e^{z_j} \over \sum_{h=0}^{n}e^{z_h}} \text{ otherwise }
+        1 - {e^{z_j} \over \sum_h e^{z_h}} \text{ where i = j} \\
+        - {e^{z_j} \over \sum_h e^{z_h}} \text{ otherwise }
     \end{cases}
 $$
 
@@ -625,7 +625,7 @@ For classification tasks, cross entropy loss is required.
 Cross entropy loss can be defined as:
 
 $$
-    CE(\mathbf{p}) = - \sum_{i = 1}^{n} t_i \log ({p_i \over \sum_{j=0}^{n}p_j})
+    CE(\mathbf{p}) = - \sum_{i = 1}^{n} t_i \log ({p_i \over \sum_j p_j})
 $$
 
 Where $\mathbf{p}$ is the prediction vector giving probalities for $n$ classes, and $\mathbf{t}$ is the vector containing the true classes.
@@ -635,18 +635,18 @@ Let's find the derivative. We have:
 $$
     {d ({p_i \over \sum_{j=0}^np_j} ) \over d p_x} =
     \begin{cases}
-        {\sum_{j=0}^np_j - p_i \over (\sum_{j=0}^np_j)²} \text{ where }i = x \\
-        {-p_i \over (\sum_{j=0}^np_j)²} \text{ otherwise}\\
+        {\sum_j p_j - p_i \over (\sum_j p_j)²} \text{ where }i = x \\
+        {-p_i \over (\sum_j p_j)²} \text{ otherwise}\\
     \end{cases}
 $$
 
 Which means:
 
 $$
-    {d (\log ({p_i \over \sum_{j=0}^np_j})) \over d p_x} =
+    {d (\log ({p_i \over \sum_j p_j})) \over d p_x} =
     \begin{cases}
-        {\sum_{j=0}^np_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
-        {-1 \over \sum_{j=0}^np_j} \text{ otherwise}\\
+        {\sum_j p_j - p_i \over  p_i \cdot \sum_j p_j} \text{ where }i = x \\
+        {-1 \over \sum_j p_j} \text{ otherwise}\\
     \end{cases}
 $$
 
@@ -655,8 +655,8 @@ And:
 $$
     {d CE(\mathbf{p})  \over d p_x} =
     \begin{cases}
-        - \sum_{i = 0}^n t_i \cdot {\sum_{j=0}^np_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
-        - \sum_{i = 0}^n t_i \cdot {-1 \over \sum_{j=0}^np_j} \text{ otherwise}\\
+        - \sum_i t_i \cdot {\sum_j p_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
+        - \sum_i t_i \cdot {-1 \over \sum_j p_j} \text{ otherwise}\\
     \end{cases}
 $$
 
@@ -667,8 +667,8 @@ We get finally:
 $$
     {d CE(\mathbf{p})  \over d p_x} =
     \begin{cases}
-        {\sum_{j=0}^np_j - p_{true} \over  p_{true} \cdot \sum_{j=0}^np_j} \text{ where }x = true \\
-        {1 \over \sum_{j=0}^np_j} \text{ otherwise}
+        {\sum_j p_j - p_{true} \over  p_{true} \cdot \sum_j p_j} \text{ where }x = true \\
+        {1 \over \sum_j p_j} \text{ otherwise}
     \end{cases}
 $$
 
