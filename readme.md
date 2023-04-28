@@ -30,7 +30,7 @@ Neural Networks are typically made up of one or more layers. They usually apply 
 ### __Densely connected layers__
 Densely connected layers are the most basic and widely used layers in the field of ANN.
 #### __Structure and function__
-They typically consist of a certain number of neurons, who all receive the same input and learn a linear transformation which is then passed through an activation function. The activation function usually introduces some sort of non linearity, allowing the network to learn non-linear relationships. Given input $\mathbf{I} = [I_0, I_1, ..., I_n]$ a neuron with weights $\mathbf{w}[w_0 \\ w_1 \\ ... \\ w_n]^T$, bias $b$ and activation function $\sigma(x)$ will compute $\sigma(\mathbf{w} \cdot I + b)$.
+They typically consist of a certain number of neurons, who all receive the same input and learn a linear transformation which is then passed through an activation function. The activation function usually introduces some sort of non linearity, allowing the network to learn non-linear relationships. Given input $\mathbf{I} = [I_0, I_1, ..., I_n]$ a neuron with weights $\mathbf{w}=[w_0 \\ w_1 \\ ... \\ w_n]^T$, bias $b$ and activation function $\sigma(x)$ will compute $\sigma(\mathbf{w} \cdot I + b)$.
 
 A densely connected layer with $s$ neurons can be expressed using a weight matrix $\mathbf{W}$ consisting of $s$ weight vectors
 
@@ -79,10 +79,30 @@ Finding the gradients for the trainable parameters is achieved by using the chai
 This makes sense for the last layer in the neural network. If the layer is earlier in the the net, we can _backpropagate_ the loss. Consider the case of a two layer network. The output layer is at index ($L$) and the input layer is at index ($L-1$).
 
 Let $a_{L-1}$ be the activation value of layer $L-1$.
-We have $a_{L-1} = \sigma (\mathcal{z}_{L-1}) = \sigma (\mathbf{W}_{L-1} \cdot I + \mathbf{b}_{L-1})$ and $a_L = \sigma (\mathcal{z}_L)= \sigma (\mathbf{W}_L \cdot a_{L-1} + \mathbf{b}_L)$.
+We have
+
+$$
+    a_{L-1} =
+    \sigma (\mathcal{z}_{L-1}) =
+    \sigma (\mathbf{W}_{L-1} \cdot I + \mathbf{b}_{L-1})
+$$
+
+And:
+
+$$
+    a_L =
+    \sigma (\mathcal{z}_L) =
+    \sigma (\mathbf{W}_L \cdot a_{L-1} + \mathbf{b}_L)
+$$
 
 Continuing with the chain rule we can obtain the gradients with regards to the input layer's parameters.
-${d\mathcal{L} \over d\mathbf{W}_{L-1}} = {d\mathcal{L}\over da_L} \cdot {da_L \over d\mathcal{z}_L} \cdot {d\mathcal{z}_L \over da_{L-1}} \cdot {{da_{L-1}} \over d\mathcal{z}_{L-1}} \cdot {d\mathcal{z}_{L-1} \over d\mathbf{W}_{L-1}}$ with the same being applicable to $\mathbf{b}_{L-1}$ and $\mathbf{I}$.
+
+$$
+    {d\mathcal{L} \over d\mathbf{W}_{L-1}} =
+    {d\mathcal{L}\over da_L} \cdot {da_L \over d\mathcal{z}_L} \cdot {d\mathcal{z}_L \over da_{L-1}} \cdot {{da_{L-1}} \over d\mathcal{z}_{L-1}} \cdot {d\mathcal{z}_{L-1} \over d\mathbf{W}_{L-1}}
+$$
+
+The same is applicable to $\mathbf{b}_{L-1}$ and $\mathbf{I}$.
 
 This is extensible to a network with any number of layers $L$, simply backpropagate the gradient with regards to the input of a layer to the previous layer until the entire network has been traversed.
 
@@ -429,10 +449,9 @@ Where each component of the image is only affected by a single kernel term:
 $$
     \displaylines{
         {d\mathbf{Z} \over dx_{00}} = {d\mathbf{Z} \over dx_{02}} = {d\mathbf{Z} \over dx_{20}} = {d\mathbf{Z} \over dx_{22}} = k_{00} \\
-
-        {d\mathbf{Z} \over dx_{01}} ={d\mathbf{Z} \over dx_{03}} ={d\mathbf{Z} \over dx_{21}} =  {d\mathbf{Z} \over dx_{23}} = k_{01} \\
+        {d\mathbf{Z} \over dx_{01}} = {d\mathbf{Z} \over dx_{03}} = {d\mathbf{Z} \over dx_{21}} = {d\mathbf{Z} \over dx_{23}} = k_{01} \\
         {d\mathbf{Z} \over dx_{10}} = {d\mathbf{Z} \over dx_{12}} =  {d\mathbf{Z} \over dx_{30}} = {d\mathbf{Z} \over dx_{32}} = k_{10} \\
-        {d\mathbf{Z} \over dx_{11}} = {d\mathbf{Z} \over dx_{13}} = {d\mathbf{Z} \over dx_{31}} = {d\mathbf{Z} \over dx_{33}} = k_{11} \\
+        {d\mathbf{Z} \over dx_{11}} = {d\mathbf{Z} \over dx_{13}} = {d\mathbf{Z} \over dx_{31}} = {d\mathbf{Z} \over dx_{33}} = k_{11}
     }
 $$
 
@@ -533,7 +552,7 @@ The softmax function $S(x)$ is used to squish all of it's inputs into the range 
 This is done by transforming the input vector: taking the exponential of the inputs, and dividing each vector component by their sum.
 
 $$
-    S(\mathbf{x}) = {e^{\mathbf{x}} \over \sum_{i=0}^ne^{x_i}}
+    S(\mathbf{x}) = {e^{\mathbf{x}} \over \sum_{i=0}^{n}e^{x_i}}
 $$
 
 To obtain it's derivative, we apply the logarithmic derivative rule:
@@ -545,7 +564,7 @@ $$
 We have:
 
 $$
-    \log (S(z_i)) = \log \left( {e^{z_i} \over \sum_{h=0}^ne^{z_h}}\right) = z_i-\log\left(\sum_{h=0}^ne^{z_h}\right)
+    \log (S(z_i)) = \log \left( {e^{z_i} \over \sum_{h=0}^{n}e^{z_h}}\right) = z_i-\log\left(\sum_{h=0}^ne^{z_h}\right)
 $$
 
 This yields:
@@ -553,8 +572,8 @@ This yields:
 $$
     {d \log{(S(z_i))}\over d z_j} =
     \begin{cases}
-        1 - {e^{z_j} \over \sum_{h=0}^ne^{z_h}} \text{ where i = j} \\
-        - {e^{z_j} \over \sum_{h=0}^ne^{z_h}} \text{ otherwise }
+        1 - {e^{z_j} \over \sum_{h=0}^{n}e^{z_h}} \text{ where i = j} \\
+        - {e^{z_j} \over \sum_{h=0}^{n}e^{z_h}} \text{ otherwise }
     \end{cases}
 $$
 
@@ -606,7 +625,7 @@ For classification tasks, cross entropy loss is required.
 Cross entropy loss can be defined as:
 
 $$
-    CE(\mathbf{p}) = - \sum_{i = 1}^n t_i \log ({p_i \over \sum_{j=0}^np_j})
+    CE(\mathbf{p}) = - \sum_{i = 1}^{n} t_i \log ({p_i \over \sum_{j=0}^{n}p_j})
 $$
 
 Where $\mathbf{p}$ is the prediction vector giving probalities for $n$ classes, and $\mathbf{t}$ is the vector containing the true classes.
