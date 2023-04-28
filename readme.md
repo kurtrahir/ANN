@@ -308,7 +308,7 @@ $$
     {d\mathcal{L} \over d\mathbf{K}} = {d\mathcal{L} \over d\mathbf{Z}} \cdot {d\mathbf{Z} \over d\mathbf{K}} = \mathbf{I} \ast {d\mathcal{L} \over d\mathbf{Z}}
 $$
 
-When lookin at the bias we see that ${d\mathbf{Z} \over db} = \left [ \begin{matrix} 1 & 1 \\ 1 & 1 \\ \end{matrix} \right ]$ and so:
+When lookin at the bias we see that $ {d\mathbf{Z} \over db} = \left [ \begin{matrix} 1 & 1 \\ 1 & 1 \\ \end{matrix} \right ] $ and so:
 
 $$
     {d\mathcal{L} \over db} = {d\mathcal{L} \over d\mathbf{Z}} \cdot  {d\mathbf{Z} \over db} = {d\mathcal{L} \over d\mathbf{Z}}
