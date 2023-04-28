@@ -281,7 +281,6 @@ $$
 And similarly:
 
 $$
-    a
     {d\mathbf{Z} \over dk_{01}} =
     \left [
         \begin{matrix}
@@ -301,7 +300,7 @@ $$
             x_{21} & x_{22} \\
         \end{matrix}
     \right ]
-$$.
+$$
 
 The derivative of the output $\mathbf{O}$ with regards to $Z$ will have the shape of the output $(2\times 2)$, and the total influence of each individual kernel component can be obtained by summing over the gradient matrix. And so we see that to obtain the loss gradients for $\mathbf{K}$, it is a correlation operation:
 
