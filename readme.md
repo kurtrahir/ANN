@@ -411,11 +411,13 @@ $$
 Where each component of the image is only affected by a single kernel term:
 
 $$
-    {d\mathbf{Z} \over dx_{00}} = {d\mathbf{Z} \over dx_{02}} = {d\mathbf{Z} \over dx_{20}} = {d\mathbf{Z} \over dx_{22}} = k_{00} \\
+    \displaylines{
+        {d\mathbf{Z} \over dx_{00}} = {d\mathbf{Z} \over dx_{02}} = {d\mathbf{Z} \over dx_{20}} = {d\mathbf{Z} \over dx_{22}} = k_{00} \\
 
-    {d\mathbf{Z} \over dx_{01}} ={d\mathbf{Z} \over dx_{03}} ={d\mathbf{Z} \over dx_{21}} =  {d\mathbf{Z} \over dx_{23}} = k_{01} \\
-    {d\mathbf{Z} \over dx_{10}} = {d\mathbf{Z} \over dx_{12}} =  {d\mathbf{Z} \over dx_{30}} = {d\mathbf{Z} \over dx_{32}} = k_{10} \\
-    {d\mathbf{Z} \over dx_{11}} = {d\mathbf{Z} \over dx_{13}} = {d\mathbf{Z} \over dx_{31}} = {d\mathbf{Z} \over dx_{33}} = k_{11} \\
+        {d\mathbf{Z} \over dx_{01}} ={d\mathbf{Z} \over dx_{03}} ={d\mathbf{Z} \over dx_{21}} =  {d\mathbf{Z} \over dx_{23}} = k_{01} \\
+        {d\mathbf{Z} \over dx_{10}} = {d\mathbf{Z} \over dx_{12}} =  {d\mathbf{Z} \over dx_{30}} = {d\mathbf{Z} \over dx_{32}} = k_{10} \\
+        {d\mathbf{Z} \over dx_{11}} = {d\mathbf{Z} \over dx_{13}} = {d\mathbf{Z} \over dx_{31}} = {d\mathbf{Z} \over dx_{33}} = k_{11} \\
+    }
 $$
 
 This can be achieved by _dilating_ the loss gradient by $k_x-1, k_y-1$ before convolving with the kernel with a $(1,1)$ step size.
@@ -599,34 +601,28 @@ $$
     {d ({p_i \over \sum_{j=0}^np_j} ) \over d p_x} =
     \begin{cases}
         {\sum_{j=0}^np_j - p_i \over (\sum_{j=0}^np_j)²} \text{ where }i = x \\
-
         {-p_i \over (\sum_{j=0}^np_j)²} \text{ otherwise}\\
-
     \end{cases}
 $$
 
 Which means:
 
 $$
-{d (\log ({p_i \over \sum_{j=0}^np_j})) \over d p_x} =
+    {d (\log ({p_i \over \sum_{j=0}^np_j})) \over d p_x} =
     \begin{cases}
         {\sum_{j=0}^np_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
-
         {-1 \over \sum_{j=0}^np_j} \text{ otherwise}\\
-
     \end{cases}
 $$
 
 And:
 
 $$
-{d CE(\mathbf{p})  \over d p_x} =
-\begin{cases}
-    - \sum_{i = 0}^n t_i \cdot {\sum_{j=0}^np_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
-
-    - \sum_{i = 0}^n t_i \cdot {-1 \over \sum_{j=0}^np_j} \text{ otherwise}\\
-
-\end{cases}
+    {d CE(\mathbf{p})  \over d p_x} =
+    \begin{cases}
+        - \sum_{i = 0}^n t_i \cdot {\sum_{j=0}^np_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
+        - \sum_{i = 0}^n t_i \cdot {-1 \over \sum_{j=0}^np_j} \text{ otherwise}\\
+    \end{cases}
 $$
 
 For each target value vector $\mathbf{t}$ there is only one non-zero value $t_{true} = 1$.
