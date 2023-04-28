@@ -32,7 +32,7 @@ Densely connected layers are the most basic and widely used layers in the field 
 #### __Structure and function__
 They typically consist of a certain number of neurons, who all receive the same input and learn a linear transformation which is then passed through an activation function. The activation function usually introduces some sort of non linearity, allowing the network to learn non-linear relationships. Given input $\mathbf{I} = [I_0, I_1, ..., I_n]$ a neuron with weights
 $\mathbf{w} =
-    \left [
+    \left[
         \begin{matrix}
             w_0 \\
             w_1 \\
