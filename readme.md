@@ -61,9 +61,10 @@ The loss function $\mathcal{L}$ takes in the target output and the prediction to
 
 Finding the gradients for the trainable parameters is achieved by using the chain rule: ${d\mathcal{L}\over d\mathbf{W}} = {d\mathcal{L}\over da} \cdot {da \over d\mathcal{z}} \cdot {d\mathcal{z} \over d\mathbf{W}}$ and similarly ${d\mathcal{L}\over d\mathbf{b}} = {d\mathcal{L}\over da} \cdot {da \over d\mathcal{z}} \cdot {d\mathcal{z} \over d\mathbf{b}}$.
 
-This makes sense for the last layer in the neural network. If the layer is earlier in the the net, we can _backpropagate_ the loss. Consider the case of a two layer network. The output layer is at index ($L$) and the input layer is at index ($L-1$)
+This makes sense for the last layer in the neural network. If the layer is earlier in the the net, we can _backpropagate_ the loss. Consider the case of a two layer network. The output layer is at index ($L$) and the input layer is at index ($L-1$).
 
-Let $a_{L-1}$ be the activation value of layer $L-1$. We have $a_{L-1} = \sigma(\mathcal{z}_{L-1})= \sigma(\mathbf{W}_{L-1}\cdot I + \mathbf{b}_{L-1})$ and $a_L = \sigma(\mathcal{z}_L)=\sigma(\mathbf{W}_L\cdot a_{L-1} + \mathbf{b}_L)$.
+Let $a_{L-1}$ be the activation value of layer $L-1$.
+We have $a_{L-1} = \sigma (\mathcal{z}_{L-1}) = \sigma (\mathbf{W}_{L-1} \cdot I + \mathbf{b}_{L-1})$ and $a_L = \sigma (\mathcal{z}_L)= \sigma (\mathbf{W}_L \cdot a_{L-1} + \mathbf{b}_L)$.
 
 Continuing with the chain rule we can obtain the gradients with regards to the input layer's parameters.
 ${d\mathcal{L} \over d\mathbf{W}_{L-1}} = {d\mathcal{L}\over da_L} \cdot {da_L \over d\mathcal{z}_L} \cdot {d\mathcal{z}_L \over da_{L-1}} \cdot {{da_{L-1}} \over d\mathcal{z}_{L-1}} \cdot {d\mathcal{z}_{L-1} \over d\mathbf{W}_{L-1}}$ with the same being applicable to $\mathbf{b}_{L-1}$ and $\mathbf{I}$.
