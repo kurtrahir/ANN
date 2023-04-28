@@ -311,7 +311,13 @@ $$
 When lookin at the bias we see that
 
 $$
-    {d\mathbf{Z} \over db} = \left [ \begin{matrix} 1 & 1 \\ 1 & 1 \\ \end{matrix} \right ]
+    {d\mathbf{Z} \over db} =
+    \left [
+        \begin{matrix}
+            1 & 1 \\
+            1 & 1 \\
+        \end{matrix}
+    \right ]
 $$
 
 And so:
@@ -321,7 +327,9 @@ $$
 $$
 
 And finally, to be able to backpropagate to eventual earlier convolutional layers, let's look at ${d\mathbf{Z} \over d\mathbf{I}}$.
+
 We have:
+
 $$
     {d\mathbf{Z} \over d\mathbf{I}} =
     \left [
@@ -334,20 +342,25 @@ $$
 $$
 
 Where the corner components of the image are each only affected by a single kernel term:
+
 $$
     {d\mathbf{Z} \over dx_{00}} = k_{00} \text{, }
     {d\mathbf{Z} \over dx_{02}} = k_{01} \text{, }
     {d\mathbf{Z} \over dx_{20}} = k_{10} \text{, }
     {d\mathbf{Z} \over dx_{22}} = k_{11}
 $$
+
 The middle components of the edges are affected by two kernel terms:
+
 $$
     {d\mathbf{Z} \over dx_{01}} = k_{01} + k_{00}\text{, }
     {d\mathbf{Z} \over dx_{10}} = k_{10} + k_{00} \text{, }
     {d\mathbf{Z} \over dx_{12}} = k_{11} + k_{01} \text{, }
     {d\mathbf{Z} \over dx_{21}} = k_{11} + k_{10}
 $$
+
 And the center component is affected by all kernel terms:
+
 $$
     {d\mathbf{Z} \over dx_{11}} = k_{00} + k_{01} + k_{10} + k_{11}
 $$
