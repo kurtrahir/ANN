@@ -552,7 +552,7 @@ The softmax function $S(x)$ is used to squish all of it's inputs into the range 
 This is done by transforming the input vector: taking the exponential of the inputs, and dividing each vector component by their sum.
 
 $$
-    S(\mathbf{x}) = \frac{e^{\mathbf{x}}}{\sum e^{x_i}}
+    S(\mathbf{x}) = \frac{e^{\mathbf{x}}}{\sum_i e^{x_i}}
 $$
 
 To obtain it's derivative, we apply the logarithmic derivative rule:
