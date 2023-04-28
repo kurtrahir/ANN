@@ -30,9 +30,34 @@ Neural Networks are typically made up of one or more layers. They usually apply 
 ### __Densely connected layers__
 Densely connected layers are the most basic and widely used layers in the field of ANN.
 #### __Structure and function__
-They typically consist of a certain number of neurons, who all receive the same input and learn a linear transformation which is then passed through an activation function. The activation function usually introduces some sort of non linearity, allowing the network to learn non-linear relationships. Given input $\mathbf{I} = [I_0, I_1, ..., I_n]$ a neuron with weights $\mathbf{w}= \left [ \begin{matrix}w_0 \\ w_1 \\ ... \\ w_n \end{matrix} \right]$, bias $b$ and activation function $\sigma(x)$ will compute $\sigma(\mathbf{w} \cdot I + b)$.
+They typically consist of a certain number of neurons, who all receive the same input and learn a linear transformation which is then passed through an activation function. The activation function usually introduces some sort of non linearity, allowing the network to learn non-linear relationships. Given input $\mathbf{I} = [I_0, I_1, ..., I_n]$ a neuron with weights
+$\mathbf{w} =
+    \left [
+        \begin{matrix}
+            w_0 \\
+            w_1 \\
+            ... \\
+            w_n
+        \end{matrix}
+    \right]
+$
+, bias $b$ and activation function $\sigma(x)$ will compute
+$\sigma(\mathbf{w} \cdot I + b)$
+.
 
-A densely connected layer with $s$ neurons can be expressed using a weight matrix $\mathbf{W}$ consisting of $s$ weight vectors $\mathbf{W} = [\mathbf{w_0},\mathbf{w_1},...,\mathbf{w_n}] = \left [\begin{matrix} w_{00} & w_{10} & ... & w_{s0} \\ w_{01} & w_{11} & ... & w_{s1} \\ ...& ...& ...& ... \\ w_{0n} & w_{1n} & ... & w_{sn} \end{matrix}\right ]$ and a bias vector $\mathbf{b} = [b_0,b_1,...,b_s]$
+A densely connected layer with $s$ neurons can be expressed using a weight matrix $\mathbf{W}$ consisting of $s$ weight vectors
+$\mathbf{W} =
+    [\mathbf{w_0},\mathbf{w_1},...,\mathbf{w_n}] =
+        \left [
+            \begin{matrix}
+                w_{00} & w_{10} & ... & w_{s0} \\
+                w_{01} & w_{11} & ... & w_{s1} \\
+                ... & ... & ... & ... \\
+                w_{0n} & w_{1n} & ... & w_{sn}
+            \end{matrix}
+        \right ]
+$
+and a bias vector $\mathbf{b} = [b_0,b_1,...,b_s]$.
 
 This allows the activation of the dense layer to be expressed as: $a = \sigma(\mathbf{W\cdot I + b} )$.
 
