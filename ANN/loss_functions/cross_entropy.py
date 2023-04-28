@@ -10,6 +10,11 @@ class CrossEntropy(Loss):
     def __init__(self):
         Loss.__init__(self)
 
+    def forward(self, pred, true):
+        return cp.sum(
+            -true * cp.log(pred / cp.sum(pred, axis=-1, keepdims=True)), axis=1
+        )
+
     def backward(self, pred, true):
         inverted = cp.abs(true - 1)
         p_true = cp.sum(pred * true, axis=-1, keepdims=True)

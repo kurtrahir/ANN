@@ -32,7 +32,7 @@ Densely connected layers are the most basic and widely used layers in the field 
 #### __Structure and function__
 They typically consist of a certain number of neurons, who all receive the same input and learn a linear transformation which is then passed through an activation function. The activation function usually introduces some sort of non linearity, allowing the network to learn non-linear relationships. Given input $\mathbf{I} = [I_0, I_1, ..., I_n]$ a neuron with weights $\mathbf{w}= \left [ \begin{matrix}w_0 \\ w_1 \\ ... \\ w_n \end{matrix} \right]$, bias $b$ and activation function $\sigma(x)$ will compute $\sigma(\mathbf{w} \cdot I + b)$.
 
-A densely connected layer with S neurons can be expressed using a weight matrix W consisting of S weight vectors $\mathbf{W} = [\mathbf{w_0},\mathbf{w_1},...,\mathbf{w_n}] = \left [\begin{matrix} w_{00} & w_{10} & ... & w_{S0} \\ w_{01} & w_{11} & ... & w_{S1} \\ ...& ...& ...& ... \\ w_{0n} & w_{1n} & ... & w_{Sn} \end{matrix}\right ]$ and a bias vector $\mathbf{b} = [b_0,b_1,...,b_S]$
+A densely connected layer with $s$ neurons can be expressed using a weight matrix $\mathbf{W}$ consisting of $s$ weight vectors $\mathbf{W} = [\mathbf{w_0},\mathbf{w_1},...,\mathbf{w_n}] = \left [\begin{matrix} w_{00} & w_{10} & ... & w_{s0} \\ w_{01} & w_{11} & ... & w_{s1} \\ ...& ...& ...& ... \\ w_{0n} & w_{1n} & ... & w_{sn} \end{matrix}\right ]$ and a bias vector $\mathbf{b} = [b_0,b_1,...,b_s]$
 
 This allows the activation of the dense layer to be expressed as: $a = \sigma(\mathbf{W\cdot I + b} )$.
 
@@ -78,6 +78,7 @@ The barebones implementation for the dense layer gradient caculation  is therefo
 
 ```python
 def backward(self, gradient):
+    # get gradient with regards to input of activation function
     d_activation = self.activation.backward(gradient)
     self.d_bias = d_activation
     self.d_weights = cp.dot(
@@ -93,7 +94,7 @@ def backward(self, gradient):
 
 ### __Convolutional Layer__
 
-In the dense layers we just reviewed, each neuron learns a weight for every input value plus a bias. This means for $n$ input values and $S$ neurons, a layer will learn $S(n+1)$ parameters. For many applications this may be fine, however when the input consists of images, the number parameters to be learned can explode. For example: for a 256x256 image, where each pixel consists of 3 color channels (RGB), using an input layer with 128 neurons we get $(256\times 256 \times 3 + 1) \times 128 = 25,165,952$ parameters.
+In the dense layers we just reviewed, each neuron learns a weight for every input value plus a bias. This means for $n$ input values and $S$ neurons, a layer will learn $S(n+1)$ parameters. For many applications this may be fine, however when the input consists of images, the number of parameters to be learned can explode. For example: for a 256x256 image, where each pixel consists of 3 color channels (RGB), using an input layer with 128 neurons we get $(256\times 256 \times 3 + 1) \times 128 = 25,165,952$ parameters.
 
 Convolutional layers aim to reduce the amount of parameters learned by sharing them. This is done through the use of kernels, whose sizes may vary, but typically are used in the shapes of $3\times 3$, $5\times 5$ or $7\times 7$.
 
@@ -105,7 +106,7 @@ With input $\mathbf{I}$ of size $(x,y)$ and kernel $\mathbf{K}$ of size $(k_x,k_
 
 $$\mathbf{O}(i,j) = \sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m)\cdot \mathbf{K}(n,m)$$
 
-This is technically the cross correlation ($\ast$) of the input and the kernel. These layers are called convolution for reasons that will become clear during the gradients discussion. This is the case for a single channel image. If the input has several output channels, the kernel should have the same number of channels. For example for $c$ input channels, $I$ is now $(x,y,c)$ and $K$ is now $(k_x,k_y,c)$. The output becomes:
+This is technically the cross correlation ($\ast$) of the input and the kernel. These layers are called convolutional for reasons that will become clear during the gradients discussion. This is the case for a single channel image. If the input has several output channels, the kernel should have the same number of channels. For example for $c$ input channels, $I$ is now $(x,y,c)$ and $K$ is now $(k_x,k_y,c)$. The output becomes:
 
 $$\mathbf{O}(i,j) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i+n,j+m,l)\cdot \mathbf{K}(n,m,l)$$
 
@@ -115,17 +116,19 @@ $$\mathbf{O}(i,j,h) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}
 
 To come back to the idea of parameters, if we consider the same example image, and instead of using 128 neurons, we learn 128 $(3\times 3)$ filters, we get $3\times 3 \times 3 \times 128 = 3456$ parameters, a much more manageable quantity.
 
-One more consideration for the convolutional layer's oepration is that the kernel may be slid over the input in different manners by changing the step size. A standard operation has a step size of 1 in both spatial dimensions $(1,1)$ but larger step sizes can reduce the overlap of the receptive fields and achieve further dimensionality reduction of the input. Let $s_x, s_y$ be the step size in the $x$ and $y$ dimensions respectively, the output now has dimensions $({x-k_x \over s_x} + 1, {y-k_y \over s_y} + 1, f)$
+##### _Step Size_
+
+A kernel may be slid over the input in different manners by changing the step size. A standard operation has a step size of 1 in both spatial dimensions $(1,1)$ but larger step sizes can reduce the overlap of the receptive fields and achieve further dimensionality reduction of the input. Let $s_x, s_y$ be the step size in the $x$ and $y$ dimensions respectively, the output now has dimensions $({x-k_x \over s_x} + 1, {y-k_y \over s_y} + 1, f)$
 
 $$\mathbf{O}(i,j,h) = \sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i\times s_x+n,j\times s_y+m,l)\cdot \mathbf{K}(n,m,l,h)$$
 
-Finally, same as for the dense layers, convolutional layers have an activation function and a bias vector $\mathbf{b}=[b_0,b_1,...,b_f]$. This means that the output of a convolutional layer is.
+Finally, same as for the dense layers, convolutional layers have an activation function $\sigma$ and a bias vector $\mathbf{b}=[b_0,b_1,...,b_f]$. This means that the output of a convolutional layer is.
 
 $$\mathbf{O}(i,j,h) = \sigma\left (\sum_{l=0}^{c}\sum_{n=0}^{k_x} \sum_{m=0}^{k_y} \mathbf{I}(i\times s_x+n,j\times s_y+m,l)\cdot \mathbf{K}(n,m,l,h) + b_h\right )$$
 
 To compute this in an efficient manner, `cupy`'s `get_strided_view` was utilized. `cupy` arrays are stored in contiguous memory, and their structure is stored using strides. Typically, this means that adjacent elements in the first dimension are accessed by taking a stride of the size of the data type in being used, while accessing adjacent elements in the second dimension is achieved by taking a stride of the size of the data type multiplied by the size of the first dimension.
 
-To avoid iterating over each image when passing it through a convolutional layer, we can exploit `stride_tricks` to create an array conducive to a single operation. Notably an array of size $({x-k_x \over s_x} + 1,{y-k_y \over s_y} + 1,f,k,k,c)$. The first three dimensions correspond to the output size of the operation, while the last three dimensions correspond to the size of an individual kernel.
+To avoid iterating over each image when passing it through a convolutional layer, we can exploit `stride_tricks` to create an array conducive to a single operation. Notably an array of size $({x-k_x \over s_x} + 1,{y-k_y \over s_y} + 1,f,k,k,c)$. The first three dimensions correspond to the output size of the operation, while the last four dimensions correspond to the size of a layers' kernels.
 
 Instead of creating an array of such size in memory, we change the strides to be taken to access the next element in each dimension. This allows us to have the same value exist in different indices of the array. Let $(m_x, m_y, m_z)$ be the stride size of the standard representation of the array in memory. To prepare for an efficient operation, we obtain a view with stride sizes: $(m_x \times s_z, m_y \times s_y, 0, m_x, m_y, m_z)$.
 Notable features of these strides:
@@ -188,7 +191,7 @@ class Conv2D(Layer):
 
 #### __Gradients__
 
-The funcamental idea of backpropagation applies to convolutional paramaters. To figure out the gradient with regards to the output, one needs to identify all the cells which were affected by each parameter.
+The fundatmental idea of backpropagation applies to convolutional parameters. To figure out the gradient with regards to the output, one needs to identify all the cells which were affected by each parameter.
 
 Consider a $(3\times 3)$ input image $I$ and a $(2\times2)$ kernel $K$, being correlated with a $(1,1)$ step size, with an added bias $b$.
 $$
@@ -322,10 +325,18 @@ $$
     {d\mathbf{Z} \over dx_{11}} = k_{00} + k_{01} + k_{10} + k_{11}
 $$
 
-This is equivalent to padding the loss gradient by $k_x - 1, k_y -1$, and rotating the kernel by 180 degrees before performing a correlation operation. This is where the name for the "convolutional" layer comes from, as performing the correlation with an inverted kernel is equivalent to performing a convolution operation.
+This is equivalent to padding the loss gradient by $k_x - 1, k_y -1$, and rotating the kernel by 180 degrees before performing a correlation operation. This is where the name for the "convolutional" layer comes from, as performing the correlation with an inverted kernel is equivalent to performing a convolution operation ($\circledast$). Let's define the $\mathcal{pad}_{full}(\mathbf{A},k_x,k_y)$ function as the function that pads the input $\mathbf{A}$ by $k_x - 1, k_y -1$.
+
+We have:
+
+$$
+    {d\mathcal{L} \over d\mathbf{I}} = pad_{full}({d\mathcal{L} \over d\mathbf{Z}}, k_x,k_y) \circledast {K}
+$$
 
 ##### _Padding_
-The padding of images may be done in the forward pass as well, as it is a way to control the output shape of the convolutional layer. Typically, this is done with zeros, and symetrically. Consider padding amount $p_x, p_y$. The output shape for the convolution operation with padding becomes: $({x-k_x+2p_x \over s_x} + 1,{y-k_y+2p_y \over s_y} + 1,f,k,k,c)$
+The padding of images may be done in the forward pass as well, as it is a way to control the output shape of the convolutional layer. Typically, this is done with zeros, and symetrically. Consider padding amount $p_x, p_y$. The output shape for the convolution operation with padding becomes: $({x-k_x+2p_x \over s_x} + 1,{y-k_y+2p_y \over s_y} + 1,f,k,k,c)$.
+
+This padding must be undone when backpropagating the input gradient to a previous layer to avoid a dimensionality issue.
 
 #### _Step size_
 
@@ -365,7 +376,7 @@ $$
     {d\mathbf{Z} \over dx_{11}} = {d\mathbf{Z} \over dx_{13}} = {d\mathbf{Z} \over dx_{31}} = {d\mathbf{Z} \over dx_{33}} = k_{11} \\
 $$
 
-This can be achieved by _dilating_ the loss gradient by $k_x-1, k_y-1$ before padding it and convolvng with the kernel using the same step size as in the forward pass.
+This can be achieved by _dilating_ the loss gradient by $k_x-1, k_y-1$ before convolving with the kernel with a $(1,1)$ step size.
 
 The dilation inserts empty rows and columns between each row and column of the existing matrix.
 
@@ -420,7 +431,7 @@ def backward(self, gradient):
 
 ## Activation Functions
 
-Two activation functions were required for the task at hand, the recitified linear unit (ReLu) for the hidden layers, and the softmax unit for the classification or output layer.
+Two activation functions were required for the task at hand, the rectified linear unit (ReLu) for the hidden layers, and the softmax unit for the classification or output layer.
 
 ### ReLu
 
@@ -458,7 +469,7 @@ class ReLu(Activation):
 
 The softmax function $S(x)$ is used to squish all of it's inputs into the range of $[0-1]$, with their sum being equal to 1.
 
-This is done by transforming the input vector taking the exponential of the inputs, and dividing each vector component by their sum.
+This is done by transforming the input vector: taking the exponential of the inputs, and dividing each vector component by their sum.
 
 $$
     S(\mathbf{x}) = {e^{\mathbf{x}} \over \sum_{i=0}^ne^{x_i}}
@@ -538,9 +549,7 @@ $$
 
 Where $\mathbf{p}$ is the prediction vector giving probalities for $n$ classes, and $\mathbf{t}$ is the vector containing the true classes.
 
-Let's find the derivative $$.
-
-We have:
+Let's find the derivative. We have:
 $$
     {\delta ({p_i \over \sum_{j=0}^np_j} ) \over \delta p_x} =
     \begin{cases}
@@ -669,11 +678,13 @@ The paper discusses the algorithm and implementation in sufficient detail to avo
 
 #### _Batch Normalization_
 
-[Batch normalization](https://arxiv.org/pdf/1502.03167) is a technique that has been found to accelerate training. It standardizes the activations to zero mean and unit variance of layers by keeping a running mean and variance.
+[Batch normalization](https://arxiv.org/pdf/1502.03167) is a technique that has been found to accelerate training. It standardizes the activations to zero mean and unit variance by keeping a running mean and variance of the activations for each layer.
 
 #### _Max Pooling_
 
-Max Pooling layers enable dimensionality reductions on 2D activations (typically convolutional layers). This is done by passing on only the largest value of the designated "pool".
+Max Pooling layers enable dimensionality reductions on 2D activations (typically convolutional layers). This is done by passing on only the largest value of the designated "pool". The index of the selected item needs to be stored for the backward pass, such that only the gradients of the selected items are backpropagated.
+
+
 
 #### _Data Augmentation_
 
