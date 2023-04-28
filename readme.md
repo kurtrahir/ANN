@@ -194,30 +194,33 @@ class Conv2D(Layer):
 The fundatmental idea of backpropagation applies to convolutional parameters. To figure out the gradient with regards to the output, one needs to identify all the cells which were affected by each parameter.
 
 Consider a $(3\times 3)$ input image $I$ and a $(2\times2)$ kernel $K$, being correlated with a $(1,1)$ step size, with an added bias $b$.
+
 $$
-\mathbf{I} = \left[
-    \begin{matrix}
-        x_{00} & x_{01} & x_{02} \\
-        x_{10} & x_{11} & x_{12} \\
-        x_{20} & x_{21} & x_{22} \\
-    \end{matrix}
-\right ]
-\mathbf{K} =
-\left[
-    \begin{matrix}
-        k_{00} & k_{01} \\
-        k_{10} & k_{11} \\
-    \end{matrix}
-\right ]
+    \mathbf{I} = \left[
+        \begin{matrix}
+            x_{00} & x_{01} & x_{02} \\
+            x_{10} & x_{11} & x_{12} \\
+            x_{20} & x_{21} & x_{22} \\
+        \end{matrix}
+    \right ]
+    \mathbf{K} =
+    \left[
+        \begin{matrix}
+            k_{00} & k_{01} \\
+            k_{10} & k_{11} \\
+        \end{matrix}
+    \right ]
 $$
+
 We will have a $(2\times2)$ output image $\mathbf{Z}$:
+
 $$
-\mathbf{Z} = \left[
-    \begin{matrix}
-        z_{00} & z_{01} \\
-        z_{10} & z_{11} \\
-    \end{matrix}
-\right ]
+    \mathbf{Z} = \left[
+        \begin{matrix}
+            z_{00} & z_{01} \\
+            z_{10} & z_{11} \\
+        \end{matrix}
+    \right ]
 $$
 
 The following is true:
