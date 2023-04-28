@@ -395,6 +395,7 @@ $$
 However we must consider the input gradients anew.
 
 We have:
+
 $$
     {d\mathbf{Z} \over d\mathbf{I}} =
     \left [
@@ -408,6 +409,7 @@ $$
 $$
 
 Where each component of the image is only affected by a single kernel term:
+
 $$
     {d\mathbf{Z} \over dx_{00}} = {d\mathbf{Z} \over dx_{02}} = {d\mathbf{Z} \over dx_{20}} = {d\mathbf{Z} \over dx_{22}} = k_{00} \\
 
@@ -482,6 +484,7 @@ $$
 $$
 
 Making its derivative with regards to it's input:
+
 $$
     {dReLu(x) \over dx} = \begin{cases} 1 \text{ where } ReLu(x)>0\\ 0 \text{ where } ReLu(x) = 0 \end{cases}
 $$
@@ -518,7 +521,7 @@ $$
 To obtain it's derivative, we apply the logarithmic derivative rule:
 
 $$
-{\delta \log{(S(z_i))} \over \delta z_j} =  {1 \over S(z_i)} \cdot {\delta S(z_i) \over \delta z_j}
+    {d \log{(S(z_i))} \over d z_j} =  {1 \over S(z_i)} \cdot {d S(z_i) \over d z_j}
 $$
 
 We have:
@@ -530,28 +533,29 @@ $$
 This yields:
 
 $$
-{\delta \log{(S(z_i))}\over \delta z_j} = \begin{cases}
-    1 - {e^{z_j} \over \sum_{h=0}^ne^{z_h}} \text{ where i = j} \\
-    - {e^{z_j} \over \sum_{h=0}^ne^{z_h}} \text{ otherwise }
-\end{cases}
+    {d \log{(S(z_i))}\over d z_j} =
+    \begin{cases}
+        1 - {e^{z_j} \over \sum_{h=0}^ne^{z_h}} \text{ where i = j} \\
+        - {e^{z_j} \over \sum_{h=0}^ne^{z_h}} \text{ otherwise }
+    \end{cases}
 $$
 
 Which is equivalent to:
 
 $$
-{\delta \log{(S(z_i))}\over \delta z_j} = \begin{cases}
-    1 - S(z_j) \text{ where i = j} \\
-    - S(z_j) \text{ otherwise }
-\end{cases}
+    {d \log{(S(z_i))}\over d z_j} = \begin{cases}
+        1 - S(z_j) \text{ where i = j} \\
+        - S(z_j) \text{ otherwise }
+    \end{cases}
 $$
 
 And finally we get:
 
 $$
-{\delta {(S(z_i))}\over \delta z_j} = \begin{cases}
-    (1 - S(z_j)) \cdot S(z_i) \text{ where i = j} \\
-    - S(z_j) \cdot S(z_i) \text{ otherwise }
-\end{cases}
+    {d {(S(z_i))}\over d z_j} = \begin{cases}
+        (1 - S(z_j)) \cdot S(z_i) \text{ where i = j} \\
+        - S(z_j) \cdot S(z_i) \text{ otherwise }
+    \end{cases}
 $$
 
 So the backward pass of the softmax implementation is this:
@@ -590,8 +594,9 @@ $$
 Where $\mathbf{p}$ is the prediction vector giving probalities for $n$ classes, and $\mathbf{t}$ is the vector containing the true classes.
 
 Let's find the derivative. We have:
+
 $$
-    {\delta ({p_i \over \sum_{j=0}^np_j} ) \over \delta p_x} =
+    {d ({p_i \over \sum_{j=0}^np_j} ) \over d p_x} =
     \begin{cases}
         {\sum_{j=0}^np_j - p_i \over (\sum_{j=0}^np_j)²} \text{ where }i = x \\
 
@@ -603,7 +608,7 @@ $$
 Which means:
 
 $$
-{\delta (\log ({p_i \over \sum_{j=0}^np_j})) \over \delta p_x} =
+{d (\log ({p_i \over \sum_{j=0}^np_j})) \over d p_x} =
     \begin{cases}
         {\sum_{j=0}^np_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
 
@@ -615,7 +620,7 @@ $$
 And:
 
 $$
-{\delta CE(\mathbf{p})  \over \delta p_x} =
+{d CE(\mathbf{p})  \over d p_x} =
 \begin{cases}
     - \sum_{i = 0}^n t_i \cdot {\sum_{j=0}^np_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
 
@@ -629,7 +634,7 @@ For each target value vector $\mathbf{t}$ there is only one non-zero value $t_{t
 We get finally:
 
 $$
-    {\delta CE(\mathbf{p})  \over \delta p_x} =
+    {d CE(\mathbf{p})  \over d p_x} =
     \begin{cases}
         {\sum_{j=0}^np_j - p_{true} \over  p_{true} \cdot \sum_{j=0}^np_j} \text{ where }x = true \\
         {1 \over \sum_{j=0}^np_j} \text{ otherwise}
@@ -673,7 +678,7 @@ While backpropagation is the way we obtain gradients for all layers in the netwo
 Stochastic gradient descent (SGD) is a basic algorithm. The update rule for the weights is simply:
 
 $$
-    \mathbf{w}_{i+1} = \mathbf{w}_{i} - \mu {\delta Loss \over \delta \mathbf{w}_i}
+    \mathbf{w}_{i+1} = \mathbf{w}_{i} - \mu {d Loss \over d \mathbf{w}_i}
 $$
 
 Where $\mathbf{w}_{x}$ are the weights at optimization step $x$, and $\mu$ is the learning rate, typically between 0 and 1.
@@ -681,6 +686,7 @@ Where $\mathbf{w}_{x}$ are the weights at optimization step $x$, and $\mu$ is th
 In my implementation, the layers set their gradients during their backward pass.
 
 This means an SGD implementation in this context could look like this:
+
 ```python
 class SGD(Optimizer):
 
