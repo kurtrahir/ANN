@@ -191,7 +191,7 @@ class Conv2D(Layer):
 
 #### __Gradients__
 
-The fundatmental idea of backpropagation applies to convolutional parameters. To figure out the gradient with regards to the output, one needs to identify all the cells which were affected by each parameter.
+The fundamental idea of backpropagation applies to convolutional parameters. To figure out the gradient with regards to the output, one needs to identify all the cells which were affected by each parameter.
 
 Consider a $(3\times 3)$ input image $I$ and a $(2\times2)$ kernel $K$, being correlated with a $(1,1)$ step size, with an added bias $b$.
 
@@ -281,6 +281,7 @@ $$
 And similarly:
 
 $$
+    a
     {d\mathbf{Z} \over dk_{01}} =
     \left [
         \begin{matrix}
