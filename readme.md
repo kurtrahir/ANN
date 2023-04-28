@@ -625,7 +625,7 @@ For classification tasks, cross entropy loss is required.
 Cross entropy loss can be defined as:
 
 $$
-    CE(\mathbf{p}) = - \sum_{i = 1}^{n} t_i \log ({p_i \over \sum_j p_j})
+    CE(\mathbf{p}) = - \sum_i t_i \log ({p_i \over \sum_j p_j})
 $$
 
 Where $\mathbf{p}$ is the prediction vector giving probalities for $n$ classes, and $\mathbf{t}$ is the vector containing the true classes.
@@ -633,9 +633,9 @@ Where $\mathbf{p}$ is the prediction vector giving probalities for $n$ classes, 
 Let's find the derivative. We have:
 
 $$
-    {d ({p_i \over \sum_{j=0}^np_j} ) \over d p_x} =
+    {d ({p_i \over \sum_j p_j} ) \over d p_x} =
     \begin{cases}
-        {\sum_j p_j - p_i \over (\sum_j p_j)²} \text{ where }i = x \\
+        {(\sum_j p_j) - p_i \over (\sum_j p_j)²} \text{ where }i = x \\
         {-p_i \over (\sum_j p_j)²} \text{ otherwise}\\
     \end{cases}
 $$
@@ -645,7 +645,7 @@ Which means:
 $$
     {d (\log ({p_i \over \sum_j p_j})) \over d p_x} =
     \begin{cases}
-        {\sum_j p_j - p_i \over  p_i \cdot \sum_j p_j} \text{ where }i = x \\
+        {(\sum_j p_j) - p_i \over  p_i \cdot \sum_j p_j} \text{ where }i = x \\
         {-1 \over \sum_j p_j} \text{ otherwise}\\
     \end{cases}
 $$
@@ -655,7 +655,7 @@ And:
 $$
     {d CE(\mathbf{p})  \over d p_x} =
     \begin{cases}
-        - \sum_i t_i \cdot {\sum_j p_j - p_i \over  p_i \cdot \sum_{j=0}^np_j} \text{ where }i = x \\
+        - \sum_i t_i \cdot {(\sum_j p_j) - p_i \over  p_i \cdot \sum_j p_j} \text{ where }i = x \\
         - \sum_i t_i \cdot {-1 \over \sum_j p_j} \text{ otherwise}\\
     \end{cases}
 $$
