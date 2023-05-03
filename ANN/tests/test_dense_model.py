@@ -26,21 +26,23 @@ def dense_model_test(model):
 
 
 def test_dense():
-    model = ANN.Sequential(
-        [ANN.Dense(n_neurons=10, activation=ANN.Softmax())],
-        ANN.SGD(loss=ANN.CrossEntropy(), learning_rate=1e-3),
+    model = ANN.models.Sequential(
+        [ANN.layers.Dense(n_neurons=10, activation=ANN.activation_functions.Softmax())],
+        ANN.optimizers.SGD(loss=ANN.loss_functions.CrossEntropy(), learning_rate=1e-3),
     )
     dense_model_test(model)
 
 
 def test_dense_deep():
-    model = ANN.Sequential(
+    model = ANN.models.Sequential(
         [
-            ANN.Dense(n_neurons=10, activation=ANN.ReLu()),
-            ANN.Dense(n_neurons=10, activation=ANN.ReLu()),
-            ANN.Dense(n_neurons=10, activation=ANN.ReLu()),
-            ANN.Dense(n_neurons=10, activation=ANN.Softmax()),
+            ANN.layers.Dense(n_neurons=10, activation=ANN.activation_functions.ReLu()),
+            ANN.layers.Dense(n_neurons=10, activation=ANN.activation_functions.ReLu()),
+            ANN.layers.Dense(n_neurons=10, activation=ANN.activation_functions.ReLu()),
+            ANN.layers.Dense(
+                n_neurons=10, activation=ANN.activation_functions.Softmax()
+            ),
         ],
-        ANN.SGD(loss=ANN.CrossEntropy(), learning_rate=1e-3),
+        ANN.optimizers.SGD(loss=ANN.loss_functions.CrossEntropy(), learning_rate=1e-3),
     )
     dense_model_test(model)

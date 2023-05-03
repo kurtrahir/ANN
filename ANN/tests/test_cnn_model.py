@@ -27,72 +27,88 @@ def cnn_model_test(model):
 
 def test_cnn():
     for padding in ["full", "valid", "same"]:
-        model = ANN.Sequential(
+        model = ANN.models.Sequential(
             [
-                ANN.Conv2D(
+                ANN.layers.Conv2D(
                     n_filters=2,
                     kernel_shape=(2, 2),
                     step_size=(1, 1),
                     padding=padding,
-                    activation_function=ANN.ReLu(),
+                    activation_function=ANN.activation_functions.ReLu(),
                 ),
-                ANN.Flatten(),
-                ANN.Dense(n_neurons=10, activation=ANN.Softmax()),
+                ANN.layers.Flatten(),
+                ANN.layers.Dense(
+                    n_neurons=10, activation=ANN.activation_functions.Softmax()
+                ),
             ],
-            ANN.SGD(loss=ANN.CrossEntropy(), learning_rate=1e-3),
+            ANN.optimizers.SGD(
+                loss=ANN.loss_functions.CrossEntropy(), learning_rate=1e-3
+            ),
         )
         cnn_model_test(model)
 
 
 def test_cnn_deep():
     for padding in ["full", "valid", "same"]:
-        model = ANN.Sequential(
+        model = ANN.models.Sequential(
             [
-                ANN.Conv2D(
+                ANN.layers.Conv2D(
                     n_filters=2,
                     kernel_shape=(2, 2),
                     step_size=(1, 1),
                     padding=padding,
-                    activation_function=ANN.ReLu(),
+                    activation_function=ANN.activation_functions.ReLu(),
                 ),
-                ANN.Conv2D(
+                ANN.layers.Conv2D(
                     n_filters=2,
                     kernel_shape=(2, 2),
                     step_size=(1, 1),
                     padding=padding,
-                    activation_function=ANN.ReLu(),
+                    activation_function=ANN.activation_functions.ReLu(),
                 ),
-                ANN.Flatten(),
-                ANN.Dense(n_neurons=10, activation=ANN.Softmax()),
+                ANN.layers.Flatten(),
+                ANN.layers.Dense(
+                    n_neurons=10, activation=ANN.activation_functions.Softmax()
+                ),
             ],
-            ANN.SGD(loss=ANN.CrossEntropy(), learning_rate=1e-3),
+            ANN.optimizers.SGD(
+                loss=ANN.loss_functions.CrossEntropy(), learning_rate=1e-3
+            ),
         )
         cnn_model_test(model)
 
 
 def test_cnn_deep_maxpool():
     for padding in ["full", "valid", "same"]:
-        model = ANN.Sequential(
+        model = ANN.models.Sequential(
             [
-                ANN.Conv2D(
+                ANN.layers.Conv2D(
                     n_filters=2,
                     kernel_shape=(2, 2),
                     step_size=(1, 1),
                     padding=padding,
-                    activation_function=ANN.ReLu(),
+                    activation_function=ANN.activation_functions.ReLu(),
                 ),
-                ANN.MaxPool2D(kernel_size=(2, 2), step_size=(2, 2), padding="valid"),
-                ANN.Conv2D(
+                ANN.layers.MaxPool2D(
+                    kernel_size=(2, 2), step_size=(2, 2), padding="valid"
+                ),
+                ANN.layers.Conv2D(
                     n_filters=2,
                     kernel_shape=(2, 2),
                     step_size=(1, 1),
                     padding=padding,
-                    activation_function=ANN.ReLu(),
+                    activation_function=ANN.activation_functions.ReLu(),
                 ),
-                ANN.MaxPool2D(kernel_size=(2, 2), step_size=(2, 2), padding="valid"),
-                ANN.Flatten(),
-                ANN.Dense(n_neurons=10, activation=ANN.Softmax()),
+                ANN.layers.MaxPool2D(
+                    kernel_size=(2, 2), step_size=(2, 2), padding="valid"
+                ),
+                ANN.layers.Flatten(),
+                ANN.layers.Dense(
+                    n_neurons=10, activation=ANN.activation_functions.Softmax()
+                ),
             ],
-            ANN.SGD(loss=ANN.CrossEntropy(), learning_rate=1e-3),
+            ANN.optimizers.SGD(
+                loss=ANN.loss_functions.CrossEntropy(), learning_rate=1e-3
+            ),
         )
         cnn_model_test(model)
