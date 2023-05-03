@@ -1,5 +1,7 @@
 # Solving MNIST Handwritten Digit Recognition using convolutional neural networks built from scratch using cupy.
 
+## Abstract
+_In this report, the building blocks for the construction of a model capable of a 99.49% accuracy score on the MNIST handwritten digit recognition set are layed out._
 
 ## Problem Definition
 
