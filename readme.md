@@ -711,7 +711,7 @@ While backpropagation is the way we obtain gradients for all layers in the netwo
 Stochastic gradient descent (SGD) is a basic algorithm. The update rule for the weights is simply:
 
 $$
-    \mathbf{w}_{i+1} = \mathbf{w}_{i} - \mu {d Loss \over d \mathbf{w}_i}
+    \mathbf{w}_{i+1} = \mathbf{w}_i - \mu {d Loss \over d \mathbf{w}_i}
 $$
 
 Where $\mathbf{w}_{x}$ are the weights at optimization step $x$, and $\mu$ is the learning rate, typically between 0 and 1.
